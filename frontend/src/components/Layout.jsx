@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { isNativeApp } from "../services/server.js";
 
 function Logo() {
   return (
@@ -25,6 +26,11 @@ export default function Layout() {
           <NavLink to="/meetings/new" className="nav-link">
             New meeting
           </NavLink>
+          {isNativeApp && (
+            <NavLink to="/settings" className="nav-link">
+              Settings
+            </NavLink>
+          )}
         </nav>
         <p className="sidebar-foot">Runs locally. Your recordings never leave this machine.</p>
       </aside>

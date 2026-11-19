@@ -32,3 +32,7 @@ src/
   utils/        files.js (validation rules matching the backend, formatting)
   styles.css    design tokens and all styles
 ```
+
+## Mobile app
+
+The same app also builds as an Android and iOS app with Capacitor. See [MOBILE.md](MOBILE.md).

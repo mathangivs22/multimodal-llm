@@ -13,11 +13,15 @@ STORAGE_DIR = BASE_DIR / "storage" / "meetings"             # uploaded files liv
 # Falls back to a local SQLite file if DATABASE_URL is not set.
 DATABASE_URL = os.getenv("DATABASE_URL") or f"sqlite:///{BASE_DIR / 'meetingiq.db'}"
 
-# Frontend dev servers allowed to call the API (Vite default is 5173)
+# Origins allowed to call the API from a browser or web view
 CORS_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:5173",      # Vite dev server
     "http://127.0.0.1:5173",
+    "http://localhost",           # Android app (Capacitor, androidScheme "http")
+    "capacitor://localhost",      # iOS app (Capacitor)
 ]
+# More origins, comma-separated, e.g. a hosted website: CORS_EXTRA_ORIGINS=https://meetingiq.example.com
+CORS_ORIGINS += [o.strip() for o in os.getenv("CORS_EXTRA_ORIGINS", "").split(",") if o.strip()]
 
 # Allowed extensions grouped by file type
 ALLOWED_EXTENSIONS = {

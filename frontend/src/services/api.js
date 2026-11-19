@@ -1,7 +1,10 @@
 import axios from "axios";
+import { getServerUrl, isNativeApp } from "./server.js";
 
-// Same-origin: Vite forwards /api to FastAPI (see vite.config.js)
-const api = axios.create({ baseURL: "/api", timeout: 30000 });
+// The base URL is read on every request, so changing the server in Settings applies at once.
+// Website: same origin, and in development Vite forwards /api to FastAPI (see vite.config.js).
+const api = axios.create({ timeout: 30000 });
+api.interceptors.request.use((config) => ({ ...config, baseURL: `${getServerUrl()}/api` }));
 
 /** Turn any axios error into one readable sentence for the UI. */
 export function errorMessage(err) {
@@ -12,7 +15,9 @@ export function errorMessage(err) {
     return `The server returned an error (${err.response.status}).`;
   }
   if (err?.code === "ECONNABORTED") return "The request timed out. Check that the backend is running.";
-  return "Can't reach the MeetingIQ backend. Make sure it is running on port 8000.";
+  return isNativeApp
+    ? "Can't reach the MeetingIQ server. Check the server address in Settings and that this phone can reach it."
+    : "Can't reach the MeetingIQ backend. Make sure it is running on port 8000.";
 }
 
 export async function listMeetings() {
@@ -56,4 +61,11 @@ export async function getMeetingAnalysis(meetingId) {
 export async function startAnalysis(meetingId) {
   const { data } = await api.post(`/meetings/${meetingId}/analyze`);
   return data;
+}
+
+/** Check that a server address answers as a MeetingIQ backend. Resolves true or throws. */
+export async function checkServer(serverUrl) {
+  const { data } = await axios.get(`${serverUrl}/api/health`, { timeout: 8000 });
+  if (data?.status !== "ok") throw new Error("not-meetingiq");
+  return true;
 }

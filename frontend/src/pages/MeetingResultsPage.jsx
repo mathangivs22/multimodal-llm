@@ -11,6 +11,7 @@ import { POLL_MS, isAnalyzed } from "../utils/analysisState.js";
 import { usePolling } from "../utils/usePolling.js";
 import { formatDate } from "../utils/files.js";
 import { formatDuration } from "../utils/time.js";
+import { isNativeApp } from "../services/server.js";
 
 export default function MeetingResultsPage() {
   const { meetingId } = useParams();
@@ -122,10 +123,13 @@ export default function MeetingResultsPage() {
               {analysis.participants.length > 0 && <span>{analysis.participants.length} attendees</span>}
             </p>
           </div>
-          <button type="button" className="btn-secondary no-print" onClick={() => window.print()}>
-            <PrintIcon />
-            Print or save as PDF
-          </button>
+          {/* Printing isn't available inside the phone app's web view */}
+          {!isNativeApp && (
+            <button type="button" className="btn-secondary no-print" onClick={() => window.print()}>
+              <PrintIcon />
+              Print or save as PDF
+            </button>
+          )}
         </header>
 
         <Glance analysis={analysis} openConflicts={conflictsChecked ? openConflicts : null} />

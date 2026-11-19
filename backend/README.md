@@ -35,6 +35,8 @@ If activation is blocked, run once: `Set-ExecutionPolicy -Scope CurrentUser Remo
 
 On first start, the tables and `storage/meetings/` are created automatically. Check in MySQL with `USE meetingiq; SHOW TABLES;` and you should see `meetings` and `meeting_files`.
 
+For the phone app, start the backend with `--host 0.0.0.0` so other devices on the network can reach it (see `frontend/MOBILE.md`). `CORS_EXTRA_ORIGINS` in `.env` adds allowed origins, e.g. a hosted website.
+
 ## Verify
 
 Open http://localhost:8000/docs (Swagger UI), or in a second PowerShell window:
