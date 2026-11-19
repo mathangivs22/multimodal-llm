@@ -74,8 +74,28 @@ Audio (.mp3 .wav .m4a .ogg .flac) 200 MB; video (.mp4 .mov .mkv .webm) 1 GB; pre
 
 ## Analysis results
 
-`GET /api/meetings/{id}/analysis` returns the minutes, decisions, action items, conflicts, transcript and slides that the results page (`/meetings/{id}/results`) displays. The format is defined in `app/analysis_schemas.py`.
+`GET /api/meetings/{id}/analysis` returns what the results page (`/meetings/{id}/results`) displays. The format is defined in `app/analysis_schemas.py`. The endpoint reads the first of these that exists in `storage/meetings/<meeting_id>/`:
 
-- The analysis pipeline writes its result to `storage/meetings/<meeting_id>/analysis.json` in that format. The endpoint validates it, including that every speaker, transcript and slide reference points at something real, and returns 500 with a log message if it doesn't.
-- Until that file exists, the endpoint returns the sample in `app/sample_data/sample_analysis.json` with `"is_sample": true`, and the page shows a "Sample results" banner. Set `SERVE_SAMPLE_ANALYSIS=false` in `.env` to return 404 instead.
-- Use the sample file as a worked example of the format.
+1. **`analysis.json`**, already in that format.
+2. **The pipeline's raw files**, converted by `app/services/pipeline_adapter.py`. Any subset works:
+
+   | File | Contents |
+   |---|---|
+   | `transcript.json` | Whisper/Groq transcription (`text`, `duration`, `segments`) |
+   | `slides_text.json` | Text and speaker notes per slide |
+   | `vision_results.json` | Diagram components, relationships and workflow per slide |
+   | `meeting_minutes.json` | Overview, discussion summary, decisions, action items, pending items |
+
+   Anything these files don't provide is listed in the response's `missing` field, and the page shows it as not available. Currently that's speaker labels, slide timing, conflict detection, and links from decisions to the transcript.
+3. **Sample data** from `app/sample_data/sample_analysis.json` (`"is_sample": true`). Set `SERVE_SAMPLE_ANALYSIS=false` in `.env` to return 404 instead.
+
+Invalid files return 500, with the reason in the server log. `analysis.json` is also checked so that every speaker, transcript line and slide it points to exists.
+
+### Tests
+
+```powershell
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+`tests/fixtures/sprint14/` holds a real set of pipeline output files. Copy them into `storage/meetings/<meeting_id>/` to see them on the results page.

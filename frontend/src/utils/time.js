@@ -11,8 +11,13 @@ export function formatRange(start, end) {
   return `${formatTimestamp(start)}–${formatTimestamp(end)}`;
 }
 
-/** 1920 -> "32 min", 5400 -> "1 h 30 min". */
+/** 98 -> "1 min 38 s", 1920 -> "32 min", 5400 -> "1 h 30 min". */
 export function formatDuration(seconds) {
+  if (seconds < 60) return `${Math.round(seconds)} s`;
+  if (seconds < 600) {
+    const s = Math.round(seconds % 60);
+    return s ? `${Math.floor(seconds / 60)} min ${s} s` : `${Math.floor(seconds / 60)} min`;
+  }
   const mins = Math.round(seconds / 60);
   if (mins < 60) return `${mins} min`;
   const h = Math.floor(mins / 60);

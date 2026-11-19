@@ -31,7 +31,7 @@ class Participant(BaseModel):
 
 
 class MeetingSummary(BaseModel):
-    overview: str
+    overview: str | None = None
     key_points: list[str] = []
 
 
@@ -57,6 +57,7 @@ class ActionItem(BaseModel):
     task: str
     owner_id: str | None = Field(None, description="Participant id, null if unassigned")
     due_date: date | None = None
+    due_text: str | None = Field(None, description="Deadline as spoken, when it isn't a calendar date")
     evidence: list[EvidenceRef] = []
 
 
@@ -80,7 +81,7 @@ class Conflict(BaseModel):
 
 class TranscriptSegment(BaseModel):
     id: str
-    speaker_id: str
+    speaker_id: str | None = Field(None, description="Participant id, null without speaker labels")
     start: Seconds
     end: Seconds
     text: str
@@ -92,18 +93,47 @@ class TimeRange(BaseModel):
     end: Seconds
 
 
+class DiagramComponent(BaseModel):
+    name: str
+    category: str | None = None
+
+
+class DiagramRelationship(BaseModel):
+    source: str
+    target: str
+    description: str | None = None
+
+
+class Diagram(BaseModel):
+    """What the vision model read from a diagram on the slide."""
+    components: list[DiagramComponent] = []
+    relationships: list[DiagramRelationship] = []
+    workflow_steps: list[str] = []
+    uncertain: list[str] = Field([], description="Things the vision model couldn't tell for sure")
+
+
+# Parts of the analysis the pipeline may not have produced. The UI says "not available"
+# for these instead of implying there was nothing to find (e.g. no conflicts).
+MissingPart = Literal["transcript", "speakers", "slides", "slide_timing", "minutes", "conflicts", "evidence"]
+
+
 class Slide(BaseModel):
     id: str
     number: int
     title: str | None = None
     text: str = Field("", description="Text extracted from the slide")
+    speaker_notes: str | None = None
     shown_at: list[TimeRange] = []
+    diagram: Diagram | None = None
 
 
 class MeetingAnalysis(BaseModel):
     meeting_id: str
     is_sample: bool = False
     generated_at: datetime
+    title: str | None = Field(None, description="Title the analysis found, if any")
+    date: str | None = Field(None, description="Meeting date as found, if any")
+    missing: list[MissingPart] = []
     duration_seconds: Seconds
     participants: list[Participant]
     summary: MeetingSummary
@@ -113,6 +143,8 @@ class MeetingAnalysis(BaseModel):
     conflicts: list[Conflict] = []
     transcript: list[TranscriptSegment] = []
     slides: list[Slide] = []
+    pending_items: list[str] = []
+    next_meeting: str | None = None
 
     @model_validator(mode="after")
     def _check_references(self) -> "MeetingAnalysis":

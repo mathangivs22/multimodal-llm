@@ -17,11 +17,11 @@ export function firstName(person) {
 /** Coloured initials circle plus optional name. */
 export function Speaker({ id, showName = true, showRole = false }) {
   const { people, colorIndex } = useResults();
-  const person = people[id];
+  const person = id ? people[id] : null;
   const name = person?.name ?? "Unknown speaker";
   return (
     <span className="speaker">
-      <span className={`avatar avatar-${colorIndex[id] ?? 0}`} aria-hidden="true">
+      <span className={`avatar ${person ? `avatar-${colorIndex[id] ?? 0}` : "avatar-unknown"}`} aria-hidden="true">
         {person ? initials(person.name) : "?"}
       </span>
       {showName && (
@@ -50,13 +50,14 @@ export function EvidenceChip({ refItem }) {
   }
 
   const seg = segments[refItem.id];
-  const who = firstName(people[seg?.speaker_id]);
+  const who = seg?.speaker_id ? firstName(people[seg.speaker_id]) : null;
   return (
     <button type="button" className="chip chip-quote" onClick={() => goTo("transcript", refItem.id)}
       title={seg ? `“${seg.text}”` : "Go to transcript"}>
       <QuoteIcon />
       <span className="chip-time">{seg ? formatTimestamp(seg.start) : "?"}</span>
       {who}
+      {!who && "Transcript"}
     </button>
   );
 }

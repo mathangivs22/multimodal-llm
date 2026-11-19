@@ -17,8 +17,9 @@ function sortConflicts(conflicts) {
 }
 
 export default function ConflictsSection() {
-  const { analysis } = useResults();
+  const { analysis, missing } = useResults();
   const conflicts = sortConflicts(analysis.conflicts);
+  const notChecked = missing.has("conflicts");
   const open = conflicts.filter((c) => c.status === "unresolved").length;
 
   return (
@@ -34,7 +35,11 @@ export default function ConflictsSection() {
 
       {conflicts.length === 0 ? (
         <div className="panel">
-          <p className="muted">No disagreements, and nothing said contradicts the slides.</p>
+          <p className="muted">
+            {notChecked
+              ? "Conflict detection hasn't run for this meeting, so disagreements and contradictions with the slides aren't shown."
+              : "No disagreements, and nothing said contradicts the slides."}
+          </p>
         </div>
       ) : (
         <ul className="conflict-list">

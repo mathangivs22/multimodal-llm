@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from app.analysis_schemas import MeetingAnalysis
 from app.config import SERVE_SAMPLE_ANALYSIS, STORAGE_DIR
+from app.services import pipeline_adapter
 
 logger = logging.getLogger("meetingiq.analysis")
 
@@ -27,7 +28,11 @@ def _sample() -> dict:
 
 
 def load_analysis(meeting_id: str) -> MeetingAnalysis:
-    """Return the pipeline's result, or sample data if none exists yet (when enabled)."""
+    """Return this meeting's analysis, from the first source that exists:
+    1. analysis.json, already in the MeetingAnalysis format
+    2. the pipeline's raw files (transcript.json, slides_text.json, ...), converted
+    3. sample data, when SERVE_SAMPLE_ANALYSIS is on
+    """
     path = analysis_path(meeting_id)
     if path.is_file():
         try:
@@ -39,6 +44,17 @@ def load_analysis(meeting_id: str) -> MeetingAnalysis:
             raise HTTPException(
                 status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "The analysis result for this meeting is invalid. Check the server log.",
+            ) from exc
+
+    folder = STORAGE_DIR / meeting_id
+    if pipeline_adapter.has_pipeline_output(folder):
+        try:
+            return pipeline_adapter.build_analysis(folder, meeting_id)
+        except (json.JSONDecodeError, ValidationError, KeyError, TypeError, ValueError) as exc:
+            logger.exception("Could not convert pipeline output in %s", folder)
+            raise HTTPException(
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "The analysis files for this meeting couldn't be read. Check the server log.",
             ) from exc
 
     if not SERVE_SAMPLE_ANALYSIS:

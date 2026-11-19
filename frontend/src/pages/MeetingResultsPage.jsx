@@ -11,6 +11,22 @@ import { formatDuration } from "../utils/time.js";
 
 const NO_FILTERS = { query: "", speaker: "" };
 
+// What to tell the reader about parts the analysis didn't produce (see MissingPart in the backend)
+const MISSING_LABELS = {
+  transcript: "a transcript",
+  speakers: "who said each line",
+  slides: "the slides",
+  slide_timing: "when each slide was on screen",
+  minutes: "minutes",
+  conflicts: "conflict detection",
+  evidence: "links from decisions and action items back to the transcript",
+};
+
+function listSentence(items) {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
 export default function MeetingResultsPage() {
   const { meetingId } = useParams();
   const [meeting, setMeeting] = useState(null);
@@ -60,6 +76,8 @@ export default function MeetingResultsPage() {
   if (!analysis) return <div className="page"><p className="muted">Loading results…</p></div>;
 
   const openConflicts = analysis.conflicts.filter((c) => c.status === "unresolved").length;
+  const missing = (analysis.missing ?? []).filter((m) => MISSING_LABELS[m]);
+  const conflictsChecked = !missing.includes("conflicts");
   const sections = [
     { id: "minutes", label: "Minutes" },
     { id: "conflicts", label: "Conflicts", count: analysis.conflicts.length, alert: openConflicts > 0 },
@@ -83,14 +101,23 @@ export default function MeetingResultsPage() {
           </div>
         )}
 
+        {!analysis.is_sample && missing.length > 0 && (
+          <div className="notice notice-info no-print" role="status">
+            <p>
+              <strong>Partial analysis.</strong> This analysis doesn't include{" "}
+              {listSentence(missing.map((m) => MISSING_LABELS[m]))}.
+            </p>
+          </div>
+        )}
+
         <header className="page-head">
           <div>
             <p className="eyebrow">Meeting results</p>
             <h1>{meeting.title}</h1>
             <p className="results-meta">
-              <span>{formatDate(meeting.created_at)}</span>
+              <span>{analysis.date || formatDate(meeting.created_at)}</span>
               <span>{formatDuration(analysis.duration_seconds)}</span>
-              <span>{analysis.participants.length} attendees</span>
+              {analysis.participants.length > 0 && <span>{analysis.participants.length} attendees</span>}
             </p>
           </div>
           <button type="button" className="btn-secondary no-print" onClick={() => window.print()}>
@@ -99,7 +126,7 @@ export default function MeetingResultsPage() {
           </button>
         </header>
 
-        <Glance analysis={analysis} openConflicts={openConflicts} />
+        <Glance analysis={analysis} openConflicts={conflictsChecked ? openConflicts : null} />
 
         <nav className="section-nav no-print" aria-label="Results sections">
           {sections.map((s) => (
@@ -124,8 +151,11 @@ function Glance({ analysis, openConflicts }) {
     { value: analysis.decisions.length, label: "Decisions", href: "#minutes" },
     { value: analysis.action_items.length, label: "Action items", href: "#minutes" },
     {
-      value: openConflicts,
-      label: openConflicts === 1 ? "Unresolved conflict" : "Unresolved conflicts",
+      value: openConflicts ?? "–",
+      label:
+        openConflicts === null
+          ? "Conflicts not checked"
+          : openConflicts === 1 ? "Unresolved conflict" : "Unresolved conflicts",
       href: "#conflicts",
       alert: openConflicts > 0,
     },

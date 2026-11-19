@@ -21,7 +21,8 @@ function highlight(text, query) {
 
 /** filters = { query, speaker }; the page owns them so evidence links can clear them. */
 export default function TranscriptSection({ filters, onFiltersChange }) {
-  const { analysis, slides, conflictsByRef, goTo } = useResults();
+  const { analysis, slides, conflictsByRef, goTo, missing } = useResults();
+  const hasSpeakers = !missing.has("speakers") && analysis.participants.length > 0;
   const { transcript, participants } = analysis;
   const query = filters.query.trim();
 
@@ -48,7 +49,7 @@ export default function TranscriptSection({ filters, onFiltersChange }) {
             <input id="transcript-search" type="search" placeholder="Words spoken…" value={filters.query}
               onChange={(e) => onFiltersChange({ ...filters, query: e.target.value })} />
           </div>
-          <div className="field field-inline">
+          {hasSpeakers && <div className="field field-inline">
             <label htmlFor="transcript-speaker">Speaker</label>
             <select id="transcript-speaker" value={filters.speaker}
               onChange={(e) => onFiltersChange({ ...filters, speaker: e.target.value })}>
@@ -57,7 +58,7 @@ export default function TranscriptSection({ filters, onFiltersChange }) {
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
-          </div>
+          </div>}
           {filtered && (
             <button type="button" className="btn-text btn-text-plain"
               onClick={() => onFiltersChange({ query: "", speaker: "" })}>
@@ -66,7 +67,12 @@ export default function TranscriptSection({ filters, onFiltersChange }) {
           )}
         </div>
 
-        {visible.length === 0 ? (
+        {!hasSpeakers && transcript.length > 0 && (
+          <p className="muted transcript-note">Speakers weren't identified in this recording.</p>
+        )}
+        {transcript.length === 0 ? (
+          <p className="muted transcript-empty">No transcript is available for this meeting.</p>
+        ) : visible.length === 0 ? (
           <p className="muted transcript-empty">No lines match.</p>
         ) : (
           <ol className="transcript">
@@ -90,7 +96,7 @@ export default function TranscriptSection({ filters, onFiltersChange }) {
                     {/* data-start is where a media player will seek once one is added */}
                     <span className="segment-time" data-start={seg.start}>{formatTimestamp(seg.start)}</span>
                     <div className="segment-body">
-                      <Speaker id={seg.speaker_id} />
+                      {seg.speaker_id && <Speaker id={seg.speaker_id} />}
                       <p className="segment-text">{highlight(seg.text, query)}</p>
                       {conflicts.length > 0 && (
                         <div className="segment-flags">

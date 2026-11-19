@@ -3,8 +3,19 @@ import { EvidenceList, Speaker, firstName } from "./Evidence.jsx";
 import { useResults } from "./ResultsContext.jsx";
 
 export default function MinutesSection() {
-  const { analysis, people } = useResults();
+  const { analysis, people, missing } = useResults();
   const { summary, participants, topics, decisions, action_items: actions } = analysis;
+
+  if (missing.has("minutes")) {
+    return (
+      <section id="minutes" className="results-section" aria-labelledby="minutes-title">
+        <h2 id="minutes-title" className="section-title">Minutes</h2>
+        <div className="panel">
+          <p className="muted">Minutes weren't generated for this meeting.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="minutes" className="results-section" aria-labelledby="minutes-title">
@@ -12,7 +23,7 @@ export default function MinutesSection() {
 
       <div className="panel">
         <h3>Summary</h3>
-        <p className="overview">{summary.overview}</p>
+        {summary.overview && <p className="overview">{summary.overview}</p>}
         {summary.key_points.length > 0 && (
           <ul className="key-points">
             {summary.key_points.map((point, i) => (
@@ -24,13 +35,17 @@ export default function MinutesSection() {
 
       <div className="panel">
         <h3>Attendees</h3>
-        <ul className="attendees">
-          {participants.map((p) => (
-            <li key={p.id}>
-              <Speaker id={p.id} showRole />
-            </li>
-          ))}
-        </ul>
+        {participants.length === 0 ? (
+          <p className="muted">No attendees were identified.</p>
+        ) : (
+          <ul className="attendees">
+            {participants.map((p) => (
+              <li key={p.id}>
+                <Speaker id={p.id} showRole />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {topics.length > 0 && (
@@ -95,7 +110,7 @@ export default function MinutesSection() {
                   <td className="action-task">{a.task}</td>
                   <td>{a.owner_id ? <Speaker id={a.owner_id} /> : <span className="muted">Unassigned</span>}</td>
                   <td className="action-due">
-                    {a.due_date ? formatDay(a.due_date) : <span className="muted">No date</span>}
+                    {a.due_date ? formatDay(a.due_date) : a.due_text ?? <span className="muted">No date</span>}
                   </td>
                   <td className="col-source">
                     <EvidenceList evidence={a.evidence} label="" />
@@ -106,6 +121,26 @@ export default function MinutesSection() {
           </table>
         )}
       </div>
+
+      {(analysis.pending_items.length > 0 || analysis.next_meeting) && (
+        <div className="panel">
+          {analysis.pending_items.length > 0 && (
+            <>
+              <h3>Still pending</h3>
+              <ul className="key-points">
+                {analysis.pending_items.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          {analysis.next_meeting && (
+            <p>
+              <strong>Next meeting:</strong> {analysis.next_meeting}
+            </p>
+          )}
+        </div>
+      )}
     </section>
   );
 }

@@ -39,7 +39,8 @@ export function ResultsProvider({ analysis, beforeJump, children }) {
     for (const s of analysis.transcript) {
       if (s.slide_id) (segmentsBySlide[s.slide_id] ??= []).push(s);
     }
-    return { analysis, people, colorIndex, segments, slides, conflictsByRef, segmentsBySlide };
+    const missing = new Set(analysis.missing ?? []);
+    return { analysis, people, colorIndex, segments, slides, conflictsByRef, segmentsBySlide, missing };
   }, [analysis]);
 
   const goTo = useCallback(

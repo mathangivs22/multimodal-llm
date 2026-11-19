@@ -1,0 +1,214 @@
+[
+    {
+        "slide_number": 3,
+        "slide_title": "High-level architecture",
+        "components": [
+            {
+                "name": "CLIENTS",
+                "category": "Container"
+            },
+            {
+                "name": "Web storefront",
+                "category": "Component"
+            },
+            {
+                "name": "Mobile app",
+                "category": "Component"
+            },
+            {
+                "name": "Admin console",
+                "category": "Component"
+            },
+            {
+                "name": "EDGE",
+                "category": "Container"
+            },
+            {
+                "name": "CDN",
+                "category": "Component"
+            },
+            {
+                "name": "Load balancer",
+                "category": "Component"
+            },
+            {
+                "name": "API gateway",
+                "category": "Component"
+            },
+            {
+                "name": "SERVICES",
+                "category": "Container"
+            },
+            {
+                "name": "Auth service",
+                "category": "Component"
+            },
+            {
+                "name": "Order service",
+                "category": "Component"
+            },
+            {
+                "name": "Inventory service",
+                "category": "Component"
+            },
+            {
+                "name": "Notification service",
+                "category": "Component"
+            },
+            {
+                "name": "DATA",
+                "category": "Container"
+            },
+            {
+                "name": "PostgreSQL",
+                "category": "Component"
+            },
+            {
+                "name": "Redis cache",
+                "category": "Component"
+            },
+            {
+                "name": "Kafka event bus",
+                "category": "Component"
+            },
+            {
+                "name": "EXTERNAL",
+                "category": "Container"
+            },
+            {
+                "name": "Stripe payments",
+                "category": "Component"
+            },
+            {
+                "name": "SendGrid email",
+                "category": "Component"
+            },
+            {
+                "name": "Datadog",
+                "category": "Component"
+            }
+        ],
+        "relationships": [
+            {
+                "source": "CLIENTS",
+                "target": "EDGE",
+                "description": "Arrow pointing from the Clients container to the Edge container",
+                "direction": "unidirectional"
+            },
+            {
+                "source": "EDGE",
+                "target": "SERVICES",
+                "description": "Arrow pointing from the Edge container to the Services container",
+                "direction": "unidirectional"
+            },
+            {
+                "source": "SERVICES",
+                "target": "DATA",
+                "description": "Arrow pointing from the Services container to the Data container",
+                "direction": "unidirectional"
+            },
+            {
+                "source": "DATA",
+                "target": "EXTERNAL",
+                "description": "Arrow pointing from the Data container to the External container",
+                "direction": "unidirectional"
+            }
+        ],
+        "workflow_steps": [
+            "CLIENTS",
+            "EDGE",
+            "SERVICES",
+            "DATA",
+            "EXTERNAL"
+        ],
+        "uncertain_relationships": [
+            "The arrows connect the containers as a whole, not specific components within them. For example, it is not specified which client talks to which edge component, or which service uses which data store.",
+            "The relationship between the 'DATA' layer and 'EXTERNAL' services (like Stripe or SendGrid) is shown as a direct flow, which might be an abstraction since typically services would call external APIs directly."
+        ]
+    },
+    {
+        "slide_number": 5,
+        "slide_title": "From commit to production",
+        "components": [
+            {
+                "name": "Developer",
+                "category": "Process Step"
+            },
+            {
+                "name": "GitHub pull request",
+                "category": "Process Step"
+            },
+            {
+                "name": "CI: tests and lint",
+                "category": "Process Step"
+            },
+            {
+                "name": "Container registry",
+                "category": "Process Step"
+            },
+            {
+                "name": "Staging",
+                "category": "Process Step"
+            },
+            {
+                "name": "Production",
+                "category": "Process Step"
+            },
+            {
+                "name": "Environments",
+                "category": "Informational Card"
+            },
+            {
+                "name": "Observability",
+                "category": "Informational Card"
+            },
+            {
+                "name": "Rollback",
+                "category": "Informational Card"
+            }
+        ],
+        "relationships": [
+            {
+                "source": "Developer",
+                "target": "GitHub pull request",
+                "description": "Arrow indicating the flow from Developer to GitHub pull request",
+                "direction": "left_to_right"
+            },
+            {
+                "source": "GitHub pull request",
+                "target": "CI: tests and lint",
+                "description": "Arrow indicating the flow from GitHub pull request to CI: tests and lint",
+                "direction": "left_to_right"
+            },
+            {
+                "source": "CI: tests and lint",
+                "target": "Container registry",
+                "description": "Arrow indicating the flow from CI: tests and lint to Container registry",
+                "direction": "left_to_right"
+            },
+            {
+                "source": "Container registry",
+                "target": "Staging",
+                "description": "Arrow indicating the flow from Container registry to Staging",
+                "direction": "left_to_right"
+            },
+            {
+                "source": "Staging",
+                "target": "Production",
+                "description": "Arrow indicating the flow from Staging to Production",
+                "direction": "left_to_right"
+            }
+        ],
+        "workflow_steps": [
+            "Developer",
+            "GitHub pull request",
+            "CI: tests and lint",
+            "Container registry",
+            "Staging",
+            "Production"
+        ],
+        "uncertain_relationships": [
+            "The relationship between the top workflow and the bottom cards (Environments, Observability, Rollback) is not explicitly drawn with arrows, implying they are supporting concepts or features rather than steps in the linear flow."
+        ]
+    }
+]

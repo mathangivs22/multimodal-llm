@@ -401,7 +401,7 @@ form { display: flex; flex-direction: column; gap: 20px; }
 }
 .slide-face {
   background: var(--ink); color: #e8edf0; border-radius: var(--radius-sm); padding: 20px 22px;
-  aspect-ratio: 16 / 10; display: flex; flex-direction: column; gap: 8px; overflow: auto;
+  min-height: 200px; align-self: start; display: flex; flex-direction: column; gap: 8px;
 }
 .slide-number { color: var(--mint); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
 .slide-title { color: #fff; font-size: 1.125rem; }
@@ -461,11 +461,32 @@ form { display: flex; flex-direction: column; gap: 20px; }
   .conflict, .slide-card, .topic, .decision, .position, .segment, tr { break-inside: avoid; }
   h2, h3 { break-after: avoid; }
   .chip { border-color: #c4cbc5; background: #fff; padding: 1px 7px; }
-  .slide-face { aspect-ratio: auto; background: #fff; color: var(--text); border: 1px solid #c4cbc5; }
+  .slide-face { min-height: 0; background: #fff; color: var(--text); border: 1px solid #c4cbc5; }
   .slide-title { color: var(--text); }
   .slide-text { color: var(--text); }
   .slide-number { color: var(--teal); }
   .said-text { white-space: normal; }
   .flash { animation: none; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ---------- Results: partial pipeline output ---------- */
+.notice-info { background: #eef2f7; border-color: #6b7f99; color: #2c3a4d; }
+.avatar-unknown { background: #a3aca7; }
+.transcript-note { font-size: 0.875rem; padding-top: 10px; }
+.slide-block { display: flex; flex-direction: column; gap: 6px; }
+.slide-notes { font-size: 0.9375rem; }
+.flow { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; }
+.flow-step { font-size: 0.8125rem; font-weight: 600; background: var(--teal-soft); color: var(--teal-dark); padding: 3px 9px; border-radius: var(--radius-sm); }
+.flow li { display: inline-flex; align-items: center; }
+.flow-arrow { color: var(--muted); margin: 0 6px; }
+.diagram-groups { margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.875rem; }
+.diagram-group { display: grid; grid-template-columns: 110px 1fr; gap: 8px; }
+.diagram-group dt { font-weight: 600; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; padding-top: 2px; }
+.diagram-group dd { margin: 0; }
+.diagram-uncertain { background: var(--amber-soft); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 0.8125rem; color: #5c3d00; }
+.diagram-uncertain-label { font-weight: 600; margin-bottom: 2px; }
+.diagram-uncertain ul { margin: 0; padding-left: 18px; }
+@media (max-width: 800px) {
+  .diagram-group { grid-template-columns: 1fr; gap: 0; }
 }
