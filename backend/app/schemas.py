@@ -1,6 +1,6 @@
 """Pydantic request/response schemas."""
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
@@ -14,6 +14,10 @@ UTCDateTime = Annotated[
 class MeetingCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: str | None = Field(None, max_length=5000)
+
+
+class MeetingStatusUpdate(BaseModel):
+    status: Literal["created", "uploaded", "processing", "completed", "failed"]
 
 
 class MeetingFileOut(BaseModel):

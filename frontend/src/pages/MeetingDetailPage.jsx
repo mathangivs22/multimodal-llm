@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import AnalysisStatePanel from "../components/AnalysisStatePanel.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import { errorMessage, getMeeting } from "../services/api.js";
+import { POLL_MS, isAnalyzed } from "../utils/analysisState.js";
 import { formatBytes, formatDate } from "../utils/files.js";
+import { usePolling } from "../utils/usePolling.js";
 
 const TYPE_LABELS = { audio: "Audio", video: "Video", presentation: "Slides" };
 
@@ -23,6 +26,13 @@ export default function MeetingDetailPage() {
       cancelled = true;
     };
   }, [meetingId]);
+
+  // Pick up the end of an analysis without a manual refresh
+  usePolling(
+    () => getMeeting(meetingId).then(setMeeting).catch(() => {}),
+    meeting?.status === "processing",
+    POLL_MS,
+  );
 
   if (error) {
     return (
@@ -87,7 +97,7 @@ export default function MeetingDetailPage() {
         )}
       </section>
 
-      {meeting.status === "completed" ? (
+      {isAnalyzed(meeting) ? (
         <section className="panel analysis-ready">
           <div>
             <h2>Analysis</h2>
@@ -98,17 +108,7 @@ export default function MeetingDetailPage() {
           </Link>
         </section>
       ) : (
-        <section className="panel panel-quiet analysis-ready">
-          <div>
-            <h2>Analysis</h2>
-            <p className="muted">
-              This meeting hasn't been analyzed yet. You can preview the results page with sample data.
-            </p>
-          </div>
-          <Link to="results" className="btn-secondary">
-            Preview results
-          </Link>
-        </section>
+        <AnalysisStatePanel status={meeting.status} />
       )}
     </div>
   );

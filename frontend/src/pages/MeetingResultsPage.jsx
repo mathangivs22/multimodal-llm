@@ -5,7 +5,11 @@ import MinutesSection from "../components/results/MinutesSection.jsx";
 import { ResultsProvider } from "../components/results/ResultsContext.jsx";
 import SlidesSection from "../components/results/SlidesSection.jsx";
 import TranscriptSection from "../components/results/TranscriptSection.jsx";
+import AnalysisStatePanel from "../components/AnalysisStatePanel.jsx";
+import StatusBadge from "../components/StatusBadge.jsx";
 import { errorMessage, getMeeting, getMeetingAnalysis } from "../services/api.js";
+import { POLL_MS, isAnalyzed } from "../utils/analysisState.js";
+import { usePolling } from "../utils/usePolling.js";
 import { formatDate } from "../utils/files.js";
 import { formatDuration } from "../utils/time.js";
 
@@ -34,22 +38,37 @@ export default function MeetingResultsPage() {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(NO_FILTERS);
 
+  // Load the meeting first; results are only requested once its analysis is completed
   useEffect(() => {
     let cancelled = false;
     setMeeting(null);
     setAnalysis(null);
     setError(null);
-    Promise.all([getMeeting(meetingId), getMeetingAnalysis(meetingId)])
-      .then(([m, a]) => {
-        if (cancelled) return;
-        setMeeting(m);
-        setAnalysis(a);
-      })
+    getMeeting(meetingId)
+      .then((m) => !cancelled && setMeeting(m))
       .catch((err) => !cancelled && setError(errorMessage(err)));
     return () => {
       cancelled = true;
     };
   }, [meetingId]);
+
+  const analyzed = isAnalyzed(meeting);
+  useEffect(() => {
+    if (!analyzed) return undefined;
+    let cancelled = false;
+    getMeetingAnalysis(meetingId)
+      .then((a) => !cancelled && setAnalysis(a))
+      .catch((err) => !cancelled && setError(errorMessage(err)));
+    return () => {
+      cancelled = true;
+    };
+  }, [meetingId, analyzed]);
+
+  usePolling(
+    () => getMeeting(meetingId).then(setMeeting).catch(() => {}),
+    meeting?.status === "processing",
+    POLL_MS,
+  );
 
   // The printed minutes should always contain the full transcript
   useEffect(() => {
@@ -69,6 +88,28 @@ export default function MeetingResultsPage() {
             Back to meeting
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (meeting && !analyzed) {
+    return (
+      <div className="page">
+        <Link to={`/meetings/${meetingId}`} className="back-link">
+          Meeting details
+        </Link>
+        <header className="page-head">
+          <div>
+            <p className="eyebrow">Meeting results</p>
+            <h1>{meeting.title}</h1>
+          </div>
+          <StatusBadge status={meeting.status} />
+        </header>
+        <AnalysisStatePanel status={meeting.status}>
+          <Link to={`/meetings/${meetingId}`} className="btn-secondary analysis-state-action">
+            Back to meeting
+          </Link>
+        </AnalysisStatePanel>
       </div>
     );
   }
@@ -95,8 +136,8 @@ export default function MeetingResultsPage() {
         {analysis.is_sample && (
           <div className="notice notice-sample no-print" role="status">
             <p>
-              <strong>Sample results.</strong> This meeting hasn't been analyzed yet, so the page shows
-              example data. Real results will replace it once the analysis pipeline runs.
+              <strong>Sample results.</strong> No result files were found for this meeting, so the page
+              shows example data (SERVE_SAMPLE_ANALYSIS is on).
             </p>
           </div>
         )}

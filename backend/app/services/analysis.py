@@ -58,7 +58,7 @@ def load_analysis(meeting_id: str) -> MeetingAnalysis:
             ) from exc
 
     if not SERVE_SAMPLE_ANALYSIS:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "This meeting hasn't been analyzed yet.")
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No analysis results were found for this meeting.")
 
     data = {**_sample(), "meeting_id": meeting_id, "is_sample": True}
     return MeetingAnalysis.model_validate(data)

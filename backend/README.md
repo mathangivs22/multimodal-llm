@@ -66,11 +66,32 @@ Error checks: uploading a `.txt` returns 415, an unknown meeting ID returns 404,
 | GET | /api/meetings | List meetings (newest first) |
 | GET | /api/meetings/{id} | Meeting details with files |
 | POST | /api/meetings/{id}/files | Upload one or more files |
-| GET | /api/meetings/{id}/analysis | Analysis result for the results page |
+| GET | /api/meetings/{id}/analysis | Analysis result (only when status is `completed`, otherwise 409) |
+| PUT | /api/meetings/{id}/status | Set the analysis status (used by the pipeline) |
 
 ## Limits
 
 Audio (.mp3 .wav .m4a .ogg .flac) 200 MB; video (.mp4 .mov .mkv .webm) 1 GB; presentations (.pptx .pdf) 100 MB. Change these in `app/config.py`.
+
+## Analysis status
+
+Each meeting moves through these statuses. The results page is only available at `completed`:
+
+| Status | Set by | Meaning |
+|---|---|---|
+| `created` | Creating the meeting | No files yet |
+| `uploaded` | Uploading files | Ready to analyze |
+| `processing` | The pipeline, when it starts | Being analyzed |
+| `completed` | The pipeline, after writing its result files | Results available |
+| `failed` | The pipeline, on error | No results |
+
+The pipeline sets the status with:
+
+```powershell
+curl.exe -X PUT http://localhost:8000/api/meetings/MEETING_ID/status -H "Content-Type: application/json" -d '{\"status\": \"completed\"}'
+```
+
+Write the result files **before** setting `completed`. `processing` and `completed` are refused until the meeting has files. While a meeting is `processing`, the meeting and results pages check every 5 seconds and show the results as soon as it completes.
 
 ## Analysis results
 
@@ -87,7 +108,7 @@ Audio (.mp3 .wav .m4a .ogg .flac) 200 MB; video (.mp4 .mov .mkv .webm) 1 GB; pre
    | `meeting_minutes.json` | Overview, discussion summary, decisions, action items, pending items |
 
    Anything these files don't provide is listed in the response's `missing` field, and the page shows it as not available. Currently that's speaker labels, slide timing, conflict detection, and links from decisions to the transcript.
-3. **Sample data** from `app/sample_data/sample_analysis.json` (`"is_sample": true`). Set `SERVE_SAMPLE_ANALYSIS=false` in `.env` to return 404 instead.
+3. **Sample data** from `app/sample_data/sample_analysis.json` (`"is_sample": true`), only if `SERVE_SAMPLE_ANALYSIS=true` is set in `.env` (useful for UI work). Otherwise a completed meeting without result files returns 404.
 
 Invalid files return 500, with the reason in the server log. `analysis.json` is also checked so that every speaker, transcript line and slide it points to exists.
 

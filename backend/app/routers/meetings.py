@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session, selectinload
 from app.analysis_schemas import MeetingAnalysis
 from app.database import get_db
 from app.models import Meeting, MeetingFile
-from app.schemas import MeetingCreate, MeetingDetail, MeetingFileOut, MeetingOut, UploadResult
+from app.schemas import (
+    MeetingCreate, MeetingDetail, MeetingFileOut, MeetingOut, MeetingStatusUpdate, UploadResult,
+)
 from app.services import analysis, storage
 
 logger = logging.getLogger("meetingiq.api")
@@ -44,10 +46,37 @@ def get_meeting(meeting_id: str, db: Session = Depends(get_db)):
 
 @router.get("/{meeting_id}/analysis", response_model=MeetingAnalysis)
 def get_meeting_analysis(meeting_id: str, db: Session = Depends(get_db)):
-    """Minutes, transcript, slides and conflicts produced by the analysis pipeline."""
-    if db.get(Meeting, meeting_id) is None:
+    """Minutes, transcript, slides and conflicts. Only available once the meeting is 'completed'."""
+    meeting = db.get(Meeting, meeting_id)
+    if meeting is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found.")
+    if meeting.status != "completed":
+        raise HTTPException(status.HTTP_409_CONFLICT, _NOT_READY.get(meeting.status, "Analysis isn't complete."))
     return analysis.load_analysis(meeting_id)
+
+
+_NOT_READY = {
+    "created": "This meeting has no files yet, so it hasn't been analyzed.",
+    "uploaded": "This meeting hasn't been analyzed yet.",
+    "processing": "This meeting is still being analyzed.",
+    "failed": "The analysis of this meeting failed.",
+}
+
+
+@router.put("/{meeting_id}/status", response_model=MeetingOut)
+def set_meeting_status(meeting_id: str, payload: MeetingStatusUpdate, db: Session = Depends(get_db)):
+    """Set the analysis state. The pipeline calls this: 'processing' when it starts,
+    then 'completed' (after writing its result files) or 'failed'."""
+    meeting = db.get(Meeting, meeting_id)
+    if meeting is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found.")
+    if payload.status in ("processing", "completed") and not meeting.files:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Upload files before analyzing this meeting.")
+    meeting.status = payload.status
+    db.commit()
+    db.refresh(meeting)
+    logger.info("Meeting %s status -> %s", meeting.id, meeting.status)
+    return meeting
 
 
 @router.post("/{meeting_id}/files", response_model=UploadResult, status_code=status.HTTP_201_CREATED)

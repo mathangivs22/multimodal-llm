@@ -35,6 +35,6 @@ MAX_FILE_SIZE = {
 
 CHUNK_SIZE = 1024 * 1024  # stream uploads to disk 1 MB at a time
 
-# Until the analysis pipeline exists, GET /api/meetings/{id}/analysis returns sample
-# data for meetings without a real result. Set SERVE_SAMPLE_ANALYSIS=false to get 404 instead.
-SERVE_SAMPLE_ANALYSIS = os.getenv("SERVE_SAMPLE_ANALYSIS", "true").strip().lower() in ("1", "true", "yes")
+# For UI work without a pipeline: SERVE_SAMPLE_ANALYSIS=true makes a completed meeting that has
+# no result files return sample data instead of 404. Off by default.
+SERVE_SAMPLE_ANALYSIS = os.getenv("SERVE_SAMPLE_ANALYSIS", "false").strip().lower() in ("1", "true", "yes")
