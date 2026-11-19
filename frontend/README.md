@@ -7,31 +7,42 @@ React + Vite. Talks to the FastAPI backend through a dev-server proxy (`/api` â†
 Start the backend first (see `../backend/README.md`), then in a second terminal:
 
 ```powershell
-cd meetingiq\frontend
+cd frontend
 npm install
 npm run dev
 ```
 
 Open http://localhost:5173
 
-## Pages so far
+## Pages
 
 | Route | Page |
 |---|---|
-| `/` | Meetings list (from `GET /api/meetings`) |
+| `/` | Meetings list with each meeting's status |
 | `/meetings/new` | Upload page: title, description, recording, slides |
-| `/meetings/:id` | Meeting details and uploaded files |
+| `/meetings/:id` | Meeting details, uploaded files and analysis status (View results / Retry analysis) |
+| `/meetings/:id/results` | Results: minutes of the meeting, then conflicts. Only for completed meetings |
+| `/settings` | Server address (mobile app only) |
+
+While a meeting is being analyzed, the meeting and results pages re-check its status every 5 seconds.
 
 ## Structure
 
 ```
 src/
-  components/   Layout (sidebar), SourcePicker (file drop zone), StatusBadge
-  pages/        MeetingsPage, UploadMeetingPage, MeetingDetailPage, NotFoundPage
-  services/     api.js (all backend calls)
-  utils/        files.js (validation rules matching the backend, formatting)
-  styles.css    design tokens and all styles
+  components/
+    Layout, SourcePicker (file drop zone), StatusBadge
+    AnalysisStatePanel   message for meetings that aren't analyzed yet
+    RetryAnalysisButton  re-runs a failed analysis
+    results/             MinutesSection, ConflictsSection, Evidence (source labels), ResultsContext
+  pages/        MeetingsPage, UploadMeetingPage, MeetingDetailPage, MeetingResultsPage,
+                SettingsPage, NotFoundPage
+  services/     api.js (all backend calls), server.js (server address), native.js (app-only behaviour)
+  utils/        files.js (upload rules matching the backend), time.js, analysisState.js, usePolling.js
+  styles.css    design tokens and all styles, including the print layout
 ```
+
+To build against a backend on another address (for example a hosted API), set `VITE_API_URL` when building: `VITE_API_URL=https://api.example.com npm run build`.
 
 ## Mobile app
 

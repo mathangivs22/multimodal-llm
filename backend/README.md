@@ -7,7 +7,7 @@ FastAPI + MySQL backend for meeting creation and file uploads (SQLite works as a
 Requires MySQL 8.0.16 or newer, running locally. Edit the password in `setup_mysql.sql`, then:
 
 ```powershell
-cd meetingiq\backend
+cd backend
 Get-Content setup_mysql.sql | mysql -u root -p
 ```
 
@@ -15,10 +15,13 @@ Get-Content setup_mysql.sql | mysql -u root -p
 
 ## 2. Configure
 
-```powershell
-Copy-Item .env.example .env
-notepad .env   # set the same password you used in setup_mysql.sql
+Create a file named `.env` in `backend/` with the database address, using the same password as in `setup_mysql.sql`:
+
 ```
+DATABASE_URL=mysql+pymysql://meetingiq:YOUR_PASSWORD@localhost:3306/meetingiq?charset=utf8mb4
+```
+
+URL-encode the password if it contains `@ : / # %`. Never commit `.env`.
 
 If `DATABASE_URL` is missing, the app falls back to a local SQLite file `meetingiq.db`.
 
