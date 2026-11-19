@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+meetingiq.db
+storage/meetings/
+.env
