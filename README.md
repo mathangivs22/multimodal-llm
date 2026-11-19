@@ -62,11 +62,7 @@ cd backend
 Copy-Item .env.example .env
 ```
 
-Example format:
 
-```dotenv
-DATABASE_URL=mysql+pymysql://USER:PASSWORD@localhost:3306/multimodal_llm?charset=utf8mb4
-```
 
 URL-encode database passwords containing reserved characters such as `@`, `:`, `/`, `#`, or `%`. If `DATABASE_URL` is not set, the backend configuration can fall back to SQLite.
 
