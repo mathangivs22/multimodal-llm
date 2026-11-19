@@ -18,7 +18,7 @@ export function firstName(person) {
 export function Speaker({ id, showName = true, showRole = false }) {
   const { people, colorIndex } = useResults();
   const person = id ? people[id] : null;
-  const name = person?.name ?? "Unknown speaker";
+  const name = person?.name ?? "Speaker not identified";
   return (
     <span className="speaker">
       <span className={`avatar ${person ? `avatar-${colorIndex[id] ?? 0}` : "avatar-unknown"}`} aria-hidden="true">
@@ -34,31 +34,31 @@ export function Speaker({ id, showName = true, showRole = false }) {
   );
 }
 
-/** One chip linking to a transcript line or slide. */
+/**
+ * Where a claim came from: a moment in the recording ("1:35 Marcus") or a slide ("Slide 2"),
+ * so the reader can find it in the recording or deck they already have. Hover shows the quote.
+ */
 export function EvidenceChip({ refItem }) {
-  const { segments, slides, people, goTo } = useResults();
+  const { segments, slides, people } = useResults();
 
   if (refItem.type === "slide") {
     const slide = slides[refItem.id];
     return (
-      <button type="button" className="chip chip-slide" onClick={() => goTo("slide", refItem.id)}
-        title={slide?.title ? `Go to slide ${slide.number}: ${slide.title}` : "Go to slide"}>
+      <span className="chip chip-slide" title={slide?.title ? `Slide ${slide.number}: ${slide.title}` : undefined}>
         <SlideIcon />
         Slide {slide?.number ?? "?"}
-      </button>
+      </span>
     );
   }
 
   const seg = segments[refItem.id];
   const who = seg?.speaker_id ? firstName(people[seg.speaker_id]) : null;
   return (
-    <button type="button" className="chip chip-quote" onClick={() => goTo("transcript", refItem.id)}
-      title={seg ? `“${seg.text}”` : "Go to transcript"}>
+    <span className="chip chip-quote" title={seg ? `“${seg.text}”` : undefined}>
       <QuoteIcon />
       <span className="chip-time">{seg ? formatTimestamp(seg.start) : "?"}</span>
       {who}
-      {!who && "Transcript"}
-    </button>
+    </span>
   );
 }
 

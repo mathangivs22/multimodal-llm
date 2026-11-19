@@ -1,4 +1,4 @@
-import { domId, useResults } from "./ResultsContext.jsx";
+import { useResults } from "./ResultsContext.jsx";
 import { EvidenceList, SlideIcon, Speaker } from "./Evidence.jsx";
 
 const KIND_LABELS = {
@@ -57,8 +57,7 @@ export default function ConflictsSection() {
 function ConflictCard({ conflict: c }) {
   const resolved = c.status === "resolved";
   return (
-    <article id={domId.conflict(c.id)} tabIndex={-1}
-      className={`conflict conflict-${c.severity} ${resolved ? "conflict-resolved" : ""}`}>
+    <article className={`conflict conflict-${c.severity} ${resolved ? "conflict-resolved" : ""}`}>
       <div className="conflict-tags">
         <span className="tag">{KIND_LABELS[c.kind] ?? c.kind}</span>
         <span className={`tag tag-severity-${c.severity}`}>
@@ -87,23 +86,27 @@ function ConflictCard({ conflict: c }) {
 
 function Position({ position: p }) {
   const { slides } = useResults();
-  // A position without a speaker comes from a slide; name the slide it cites
+  // Without a speaker, the position comes from a slide (name it) or from someone not identified
   const slideRef = p.evidence.find((r) => r.type === "slide");
   const slide = slideRef && slides[slideRef.id];
+  let who;
+  if (p.speaker_id) {
+    who = <Speaker id={p.speaker_id} />;
+  } else if (slide) {
+    who = (
+      <span className="speaker">
+        <span className="avatar avatar-slide" aria-hidden="true">
+          <SlideIcon />
+        </span>
+        <span className="speaker-name">Slide {slide.number}</span>
+      </span>
+    );
+  } else {
+    who = <Speaker id={null} />;
+  }
   return (
     <div className="position">
-      <div className="position-who">
-        {p.speaker_id ? (
-          <Speaker id={p.speaker_id} />
-        ) : (
-          <span className="speaker">
-            <span className="avatar avatar-slide" aria-hidden="true">
-              <SlideIcon />
-            </span>
-            <span className="speaker-name">{slide ? `Slide ${slide.number}` : "Slides"}</span>
-          </span>
-        )}
-      </div>
+      <div className="position-who">{who}</div>
       <blockquote className="position-statement">{p.statement}</blockquote>
       <EvidenceList evidence={p.evidence} />
     </div>

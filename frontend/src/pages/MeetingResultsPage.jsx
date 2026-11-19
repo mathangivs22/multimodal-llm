@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import ConflictsSection from "../components/results/ConflictsSection.jsx";
 import MinutesSection from "../components/results/MinutesSection.jsx";
 import { ResultsProvider } from "../components/results/ResultsContext.jsx";
-import SlidesSection from "../components/results/SlidesSection.jsx";
-import TranscriptSection from "../components/results/TranscriptSection.jsx";
 import AnalysisStatePanel from "../components/AnalysisStatePanel.jsx";
 import RetryAnalysisButton from "../components/RetryAnalysisButton.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
@@ -14,30 +12,11 @@ import { usePolling } from "../utils/usePolling.js";
 import { formatDate } from "../utils/files.js";
 import { formatDuration } from "../utils/time.js";
 
-const NO_FILTERS = { query: "", speaker: "" };
-
-// What to tell the reader about parts the analysis didn't produce (see MissingPart in the backend)
-const MISSING_LABELS = {
-  transcript: "a transcript",
-  speakers: "who said each line",
-  slides: "the slides",
-  slide_timing: "when each slide was on screen",
-  minutes: "minutes",
-  conflicts: "conflict detection",
-  evidence: "links from decisions and action items back to the transcript",
-};
-
-function listSentence(items) {
-  if (items.length <= 1) return items.join("");
-  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
-}
-
 export default function MeetingResultsPage() {
   const { meetingId } = useParams();
   const [meeting, setMeeting] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState(NO_FILTERS);
 
   // Load the meeting first; results are only requested once its analysis is completed
   useEffect(() => {
@@ -70,15 +49,6 @@ export default function MeetingResultsPage() {
     meeting?.status === "processing",
     POLL_MS,
   );
-
-  // The printed minutes should always contain the full transcript
-  useEffect(() => {
-    const reset = () => setFilters(NO_FILTERS);
-    window.addEventListener("beforeprint", reset);
-    return () => window.removeEventListener("beforeprint", reset);
-  }, []);
-
-  const clearFilters = useCallback(() => setFilters(NO_FILTERS), []);
 
   if (error) {
     return (
@@ -124,17 +94,10 @@ export default function MeetingResultsPage() {
   if (!analysis) return <div className="page"><p className="muted">Loading results…</p></div>;
 
   const openConflicts = analysis.conflicts.filter((c) => c.status === "unresolved").length;
-  const missing = (analysis.missing ?? []).filter((m) => MISSING_LABELS[m]);
-  const conflictsChecked = !missing.includes("conflicts");
-  const sections = [
-    { id: "minutes", label: "Minutes" },
-    { id: "conflicts", label: "Conflicts", count: analysis.conflicts.length, alert: openConflicts > 0 },
-    { id: "transcript", label: "Transcript", count: analysis.transcript.length },
-    { id: "slides", label: "Slides", count: analysis.slides.length },
-  ];
+  const conflictsChecked = !(analysis.missing ?? []).includes("conflicts");
 
   return (
-    <ResultsProvider analysis={analysis} beforeJump={clearFilters}>
+    <ResultsProvider analysis={analysis}>
       <div className="page results-page">
         <Link to={`/meetings/${meetingId}`} className="back-link no-print">
           Meeting details
@@ -145,15 +108,6 @@ export default function MeetingResultsPage() {
             <p>
               <strong>Sample results.</strong> No result files were found for this meeting, so the page
               shows example data (SERVE_SAMPLE_ANALYSIS is on).
-            </p>
-          </div>
-        )}
-
-        {!analysis.is_sample && missing.length > 0 && (
-          <div className="notice notice-info no-print" role="status">
-            <p>
-              <strong>Partial analysis.</strong> This analysis doesn't include{" "}
-              {listSentence(missing.map((m) => MISSING_LABELS[m]))}.
             </p>
           </div>
         )}
@@ -176,19 +130,8 @@ export default function MeetingResultsPage() {
 
         <Glance analysis={analysis} openConflicts={conflictsChecked ? openConflicts : null} />
 
-        <nav className="section-nav no-print" aria-label="Results sections">
-          {sections.map((s) => (
-            <a key={s.id} href={`#${s.id}`} className="section-nav-link">
-              {s.label}
-              {s.count > 0 && <span className={`count ${s.alert ? "count-alert" : ""}`}>{s.count}</span>}
-            </a>
-          ))}
-        </nav>
-
         <MinutesSection />
         <ConflictsSection />
-        <TranscriptSection filters={filters} onFiltersChange={setFilters} />
-        <SlidesSection />
       </div>
     </ResultsProvider>
   );
@@ -207,7 +150,6 @@ function Glance({ analysis, openConflicts }) {
       href: "#conflicts",
       alert: openConflicts > 0,
     },
-    { value: analysis.slides.length, label: "Slides shown", href: "#slides" },
   ];
   return (
     <ul className="glance" aria-label="At a glance">

@@ -113,8 +113,9 @@ Write the result files **before** setting `completed`. `processing` and `complet
    | `slides_text.json` | Text and speaker notes per slide |
    | `vision_results.json` | Diagram components, relationships and workflow per slide |
    | `meeting_minutes.json` | Overview, discussion summary, decisions, action items, pending items |
+   | `conflicts.json` | Disagreements and speech-vs-slide contradictions. Format: [`formats/`](formats/README.md) |
 
-   Anything these files don't provide is listed in the response's `missing` field, and the page shows it as not available. Currently that's speaker labels, slide timing, conflict detection, and links from decisions to the transcript.
+   Anything these files don't provide is listed in the response's `missing` field, and the page shows it as not available. Currently that's speaker labels and slide timing, links from decisions to the transcript, and conflicts when `conflicts.json` is absent.
 3. **Sample data** from `app/sample_data/sample_analysis.json` (`"is_sample": true`), only if `SERVE_SAMPLE_ANALYSIS=true` is set in `.env` (useful for UI work). Otherwise a completed meeting without result files returns 404.
 
 Invalid files return 500, with the reason in the server log. `analysis.json` is also checked so that every speaker, transcript line and slide it points to exists.

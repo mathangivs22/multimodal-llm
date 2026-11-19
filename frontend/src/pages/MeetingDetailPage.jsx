@@ -102,7 +102,7 @@ export default function MeetingDetailPage() {
         <section className="panel analysis-ready">
           <div>
             <h2>Analysis</h2>
-            <p className="muted">Minutes, decisions, conflicts, the transcript and the slides are ready.</p>
+            <p className="muted">The minutes and the conflicts found in the discussion are ready.</p>
           </div>
           <Link to="results" className="btn-primary">
             View results

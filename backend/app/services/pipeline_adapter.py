@@ -9,11 +9,13 @@ The pipeline writes these files to storage/meetings/<meeting_id>/ (any subset wo
     meeting_minutes.json  {meeting_overview: {title, date, participants}, discussion_summary,
                            key_decisions, action_items: [{task, owner, deadline}], pending_items,
                            next_meeting}
+    conflicts.json        {conflicts: [...]}, format in backend/formats/conflicts.schema.json
 
 Whatever these files can't provide (speaker labels, slide timing, conflicts, links from
 claims to the transcript) is listed in `missing`, so the results page can say so.
 """
 import json
+import logging
 import re
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -21,11 +23,14 @@ from typing import Any
 
 from app.analysis_schemas import MeetingAnalysis
 
+logger = logging.getLogger("meetingiq.adapter")
+
 TRANSCRIPT_FILE = "transcript.json"
 SLIDES_FILE = "slides_text.json"
 VISION_FILE = "vision_results.json"
 MINUTES_FILE = "meeting_minutes.json"
-PIPELINE_FILES = (TRANSCRIPT_FILE, SLIDES_FILE, VISION_FILE, MINUTES_FILE)
+CONFLICTS_FILE = "conflicts.json"
+PIPELINE_FILES = (TRANSCRIPT_FILE, SLIDES_FILE, VISION_FILE, MINUTES_FILE, CONFLICTS_FILE)
 
 
 def has_pipeline_output(folder: Path) -> bool:
@@ -132,6 +137,26 @@ def _convert_slides(raw_slides: list | None, raw_vision: list | None) -> list[di
     return [slides[n] for n in sorted(slides)]
 
 
+# ---------- people ----------
+
+class People:
+    """Participants by name. Names from the minutes and the conflicts share one id each."""
+
+    def __init__(self):
+        self.items: list[dict] = []
+        self._by_name: dict[str, str] = {}
+
+    def id_for(self, name: Any) -> str | None:
+        name = _text(name)
+        if not name:
+            return None
+        key = name.lower()
+        if key not in self._by_name:
+            self._by_name[key] = f"p{len(self.items) + 1}"
+            self.items.append({"id": self._by_name[key], "name": name, "role": None})
+        return self._by_name[key]
+
+
 # ---------- minutes ----------
 
 def _parse_date(value: str | None) -> date | None:
@@ -153,23 +178,10 @@ def _item_text(item: Any) -> str | None:
     return _text(item)
 
 
-def _convert_minutes(raw: dict) -> dict:
+def _convert_minutes(raw: dict, people: People) -> dict:
     overview = raw.get("meeting_overview") or {}
-    people: list[dict] = []
-    by_name: dict[str, str] = {}
-
-    def person_id(name: str | None) -> str | None:
-        name = _text(name)
-        if not name:
-            return None
-        key = name.lower()
-        if key not in by_name:
-            by_name[key] = f"p{len(people) + 1}"
-            people.append({"id": by_name[key], "name": name, "role": None})
-        return by_name[key]
-
     for name in overview.get("participants") or []:
-        person_id(name)
+        people.id_for(name)
 
     actions = []
     for i, a in enumerate(raw.get("action_items") or [], start=1):
@@ -181,7 +193,7 @@ def _convert_minutes(raw: dict) -> dict:
         actions.append({
             "id": f"a{i}",
             "task": task,
-            "owner_id": person_id(a.get("owner")),
+            "owner_id": people.id_for(a.get("owner")),
             "due_date": due,
             "due_text": deadline if deadline and not due else None,
         })
@@ -189,7 +201,6 @@ def _convert_minutes(raw: dict) -> dict:
     return {
         "title": _text(overview.get("title")),
         "date": _text(overview.get("date")),
-        "participants": people,
         "summary": {
             "overview": _text(raw.get("summary") or raw.get("overview")),
             "key_points": [t for t in map(_text, raw.get("discussion_summary") or []) if t],
@@ -204,6 +215,66 @@ def _convert_minutes(raw: dict) -> dict:
     }
 
 
+# ---------- conflicts ----------
+
+KINDS = {"speaker_disagreement", "speech_vs_slide"}
+SEVERITIES = {"low", "medium", "high"}
+
+
+def _as_ints(values: Any) -> list[int]:
+    out = []
+    for v in values if isinstance(values, list) else []:
+        try:
+            out.append(int(v))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _convert_conflicts(raw: Any, people: People, segment_ids: set[str], slide_ids: set[str]) -> list[dict]:
+    """Map the LLM's conflicts onto the results format. Being LLM output, it is read leniently:
+    references to segments or slides that don't exist are dropped, and a conflict that is
+    unusable (unknown kind, no title, fewer than two sides) is skipped with a warning."""
+    items = raw.get("conflicts") if isinstance(raw, dict) else raw
+    out = []
+    for i, c in enumerate(items if isinstance(items, list) else [], start=1):
+        if not isinstance(c, dict):
+            continue
+        kind = str(c.get("kind", "")).strip().lower()
+        title = _text(c.get("title"))
+        positions = []
+        for p in c.get("positions") or []:
+            if not isinstance(p, dict) or not _text(p.get("statement")):
+                continue
+            evidence = [
+                {"type": "transcript", "id": f"seg-{n}"} for n in _as_ints(p.get("segment_ids"))
+                if f"seg-{n}" in segment_ids
+            ] + [
+                {"type": "slide", "id": f"s{n}"} for n in _as_ints(p.get("slide_numbers"))
+                if f"s{n}" in slide_ids
+            ]
+            positions.append({
+                "speaker_id": people.id_for(p.get("speaker")),
+                "statement": _text(p["statement"]),
+                "evidence": evidence,
+            })
+        if kind not in KINDS or not title or len(positions) < 2:
+            logger.warning("Skipping conflict %s (%r): needs a known kind, a title and two sides", i, title)
+            continue
+        severity = str(c.get("severity", "")).strip().lower()
+        out.append({
+            "id": f"c{i}",
+            "kind": kind,
+            "severity": severity if severity in SEVERITIES else "medium",
+            "status": "resolved" if str(c.get("status", "")).strip().lower() == "resolved" else "unresolved",
+            "title": title,
+            "description": _text(c.get("description")) or "",
+            "positions": positions,
+            "resolution": _text(c.get("resolution")),
+        })
+    return out
+
+
 # ---------- all together ----------
 
 def build_analysis(folder: Path, meeting_id: str) -> MeetingAnalysis:
@@ -212,14 +283,19 @@ def build_analysis(folder: Path, meeting_id: str) -> MeetingAnalysis:
     raw_slides = _read(folder, SLIDES_FILE)
     raw_vision = _read(folder, VISION_FILE)
     raw_minutes = _read(folder, MINUTES_FILE)
+    raw_conflicts = _read(folder, CONFLICTS_FILE)
+    people = People()
 
     transcript, duration = _convert_transcript(raw_transcript) if raw_transcript else ([], 0.0)
     slides = _convert_slides(raw_slides, raw_vision)
-    minutes = _convert_minutes(raw_minutes) if raw_minutes else {
-        "participants": [], "summary": {"key_points": []},
-    }
+    minutes = _convert_minutes(raw_minutes, people) if raw_minutes else {"summary": {"key_points": []}}
+    conflicts = _convert_conflicts(
+        raw_conflicts, people, {s["id"] for s in transcript}, {s["id"] for s in slides},
+    ) if raw_conflicts is not None else []
 
-    missing = ["conflicts", "evidence"]  # no conflict detection or claim-to-source linking yet
+    missing = ["evidence"]  # the minutes don't link decisions back to the transcript yet
+    if raw_conflicts is None:
+        missing.append("conflicts")  # conflict detection hasn't run (an empty list means none found)
     if not transcript:
         missing.append("transcript")
     elif all(s["speaker_id"] is None for s in transcript):
@@ -238,7 +314,9 @@ def build_analysis(folder: Path, meeting_id: str) -> MeetingAnalysis:
         "is_sample": False,
         "generated_at": datetime.fromtimestamp(newest, tz=timezone.utc),
         "duration_seconds": duration,
+        "participants": people.items,
         "transcript": transcript,
         "slides": slides,
+        "conflicts": conflicts,
         "missing": missing,
     })

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "meetingiq/conflicts.schema.json",
+  "title": "Meeting conflicts",
+  "description": "Output of the conflict-detection step, saved as storage/meetings/<meeting_id>/conflicts.json. An empty list means the meeting was checked and nothing conflicted.",
+  "type": "object",
+  "required": ["conflicts"],
+  "additionalProperties": false,
+  "properties": {
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/conflict" }
+    }
+  },
+  "$defs": {
+    "conflict": {
+      "type": "object",
+      "required": ["kind", "severity", "status", "title", "description", "positions", "resolution"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["speaker_disagreement", "speech_vs_slide"],
+          "description": "speaker_disagreement: people in the meeting disagree with each other. speech_vs_slide: something said contradicts what a slide shows."
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "How much it matters: high = affects dates, money, scope or a decision; low = minor detail."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["resolved", "unresolved"],
+          "description": "resolved only if the meeting clearly settled it."
+        },
+        "title": {
+          "type": "string",
+          "description": "One line naming both sides, e.g. 'Budget: $120,000 on the slide, $95,000 approved'."
+        },
+        "description": {
+          "type": "string",
+          "description": "One or two sentences explaining the conflict."
+        },
+        "positions": {
+          "type": "array",
+          "minItems": 2,
+          "description": "The sides of the conflict, at least two.",
+          "items": { "$ref": "#/$defs/position" }
+        },
+        "resolution": {
+          "type": ["string", "null"],
+          "description": "How it was settled, or null if it wasn't."
+        }
+      }
+    },
+    "position": {
+      "type": "object",
+      "required": ["speaker", "statement", "segment_ids", "slide_numbers"],
+      "additionalProperties": false,
+      "properties": {
+        "speaker": {
+          "type": ["string", "null"],
+          "description": "Name of the person holding this position, as used in the meeting. null when the position comes from a slide, or when the speaker isn't known."
+        },
+        "statement": {
+          "type": "string",
+          "description": "This side's position in one sentence."
+        },
+        "segment_ids": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Transcript segments that show this position: the 'id' values from transcript.json."
+        },
+        "slide_numbers": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Slides that show this position: 'slide_number' values from slides_text.json."
+        }
+      }
+    }
+  }
+}

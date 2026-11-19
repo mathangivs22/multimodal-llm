@@ -90,3 +90,65 @@ def test_owner_and_deadline_are_used_when_present(folder):
     assert second.due_date is None and second.due_text == "next Friday"
     assert a.pending_items == ["Confirm PDF export scope", "Ask design about icons"]
     assert a.next_meeting == "Sprint 14 review"
+
+
+# ---------- conflicts.json ----------
+
+FORMATS = Path(__file__).parent.parent / "formats"
+
+
+def _with_conflicts(folder, data):
+    (folder / "conflicts.json").write_text(json.dumps(data))
+    return build_analysis(folder, "m1")
+
+
+def test_example_conflicts_match_schema():
+    jsonschema = pytest.importorskip("jsonschema")
+    schema = json.loads((FORMATS / "conflicts.schema.json").read_text())
+    example = json.loads((FORMATS / "conflicts.example.json").read_text())
+    jsonschema.validate(example, schema)
+
+
+def test_example_conflicts_are_read(folder):
+    example = json.loads((FORMATS / "conflicts.example.json").read_text())
+    a = _with_conflicts(folder, example)
+
+    assert "conflicts" not in a.missing
+    first, second = a.conflicts
+    assert first.kind == "speech_vs_slide" and first.severity == "high" and first.status == "unresolved"
+    slide_side, speech_side = first.positions
+    assert slide_side.speaker_id is None
+    assert [(r.type, r.id) for r in slide_side.evidence] == [("slide", "s1")]
+    assert [(r.type, r.id) for r in speech_side.evidence] == [("transcript", "seg-0")]
+    assert second.status == "resolved" and second.resolution.startswith("Only the basic PDF layout")
+
+
+def test_empty_conflicts_means_checked_and_none_found(folder):
+    a = _with_conflicts(folder, {"conflicts": []})
+    assert a.conflicts == [] and "conflicts" not in a.missing
+
+
+def test_conflicts_are_read_leniently(folder):
+    a = _with_conflicts(folder, {"conflicts": [
+        {   # usable, with LLM quirks: odd casing, unknown severity, references that don't exist
+            "kind": "Speaker_Disagreement", "severity": "critical", "status": "RESOLVED",
+            "title": "Estimate for the authenticator app", "description": "3 vs 5 points.",
+            "positions": [
+                {"speaker": "Dev", "statement": "It's 5 points.", "segment_ids": [4, 99], "slide_numbers": [42]},
+                {"speaker": "Asha", "statement": "It's 3 points.", "segment_ids": ["2"], "slide_numbers": []},
+            ],
+            "resolution": "",
+        },
+        {"kind": "something_else", "title": "x", "positions": []},                 # unknown kind
+        {"kind": "speech_vs_slide", "title": "One side only",
+         "positions": [{"speaker": None, "statement": "s", "segment_ids": [], "slide_numbers": [1]}]},
+    ]})
+
+    [c] = a.conflicts
+    assert c.kind == "speaker_disagreement" and c.severity == "medium" and c.status == "resolved"
+    assert c.resolution is None
+    dev, asha = c.positions
+    assert dev.speaker_id == "p2"  # "Dev" from the minutes
+    assert [r.id for r in dev.evidence] == ["seg-4"]  # seg-99 and slide 42 don't exist
+    assert [r.id for r in asha.evidence] == ["seg-2"]
+    assert [p.name for p in a.participants] == ["Marcus", "Dev", "Asha"]  # new name added
