@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import ConflictsSection from "../components/results/ConflictsSection.jsx";
 import MinutesSection from "../components/results/MinutesSection.jsx";
 import { ResultsProvider } from "../components/results/ResultsContext.jsx";
+import ShareMinutes from "../components/results/ShareMinutes.jsx";
 import AnalysisStatePanel from "../components/AnalysisStatePanel.jsx";
 import RetryAnalysisButton from "../components/RetryAnalysisButton.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
@@ -123,13 +124,16 @@ export default function MeetingResultsPage() {
               {analysis.participants.length > 0 && <span>{analysis.participants.length} attendees</span>}
             </p>
           </div>
-          {/* Printing isn't available inside the phone app's web view */}
-          {!isNativeApp && (
-            <button type="button" className="btn-secondary no-print" onClick={() => window.print()}>
-              <PrintIcon />
-              Print or save as PDF
-            </button>
-          )}
+          <div className="results-actions no-print">
+            <ShareMinutes meeting={meeting} analysis={analysis} />
+            {/* Printing isn't available inside the phone app's web view */}
+            {!isNativeApp && (
+              <button type="button" className="btn-secondary" onClick={() => window.print()}>
+                <PrintIcon />
+                Print or save as PDF
+              </button>
+            )}
+          </div>
         </header>
 
         <Glance analysis={analysis} openConflicts={conflictsChecked ? openConflicts : null} />

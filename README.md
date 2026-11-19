@@ -91,7 +91,7 @@ The backend combines whichever of these exist into what the results page shows, 
 
 ## Status
 
-- **Done:** meeting upload, status tracking, results page (minutes and conflicts), retry for failed analyses, print/PDF of the results, Android/iOS app projects.
+- **Done:** meeting upload, status tracking, results page (minutes and conflicts), retry for failed analyses, sharing the results (print/PDF, email through your own email app, copy as text), Android/iOS app projects.
 - **Analysis pipeline:** the speech-to-text, slide and LLM pipeline is on the `feature/phase-2-llms` branch and isn't merged here yet. On this branch, `POST /api/meetings/{id}/analyze` (the Retry button) is a placeholder that only checks for existing result files; see `backend/app/services/analysis_runner.py`.
 - **Not yet built:** speaker identification, conflict detection in the pipeline (the format is defined), linking decisions back to transcript lines, push notifications in the mobile app (needs a Firebase project), and running the native apps on a device.
 

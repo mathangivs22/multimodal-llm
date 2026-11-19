@@ -1,20 +1,7 @@
 import { useResults } from "./ResultsContext.jsx";
 import { EvidenceList, SlideIcon, Speaker } from "./Evidence.jsx";
+import { KIND_LABELS, sortConflicts } from "../../utils/conflicts.js";
 
-const KIND_LABELS = {
-  speaker_disagreement: "Speakers disagree",
-  speech_vs_slide: "Said vs. shown",
-};
-const SEVERITY_RANK = { high: 0, medium: 1, low: 2 };
-
-/** Unresolved first, then by severity. */
-function sortConflicts(conflicts) {
-  return [...conflicts].sort(
-    (a, b) =>
-      (a.status === "resolved") - (b.status === "resolved") ||
-      SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity],
-  );
-}
 
 export default function ConflictsSection() {
   const { analysis, missing } = useResults();

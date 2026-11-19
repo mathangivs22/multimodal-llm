@@ -411,3 +411,14 @@ form { display: flex; flex-direction: column; gap: 20px; }
     padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right));
   }
 }
+
+/* ---------- Results: email / copy / print ---------- */
+.results-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: flex-start; gap: 8px; }
+.share { display: contents; }
+.share-buttons { display: contents; }
+.share-notice { order: 1; flex-basis: 100%; text-align: right; font-size: 0.875rem; color: var(--teal-dark); min-height: 0; }
+.share-notice:empty { display: none; }
+@media (max-width: 800px) {
+  .results-actions { justify-content: flex-start; }
+  .share-notice { text-align: left; }
+}
