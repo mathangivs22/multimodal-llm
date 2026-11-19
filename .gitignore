@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Secrets and local data
+.env
+*.db
+backend/storage/meetings/
+
+# Node
+node_modules/
+dist/
