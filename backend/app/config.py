@@ -56,3 +56,6 @@ VISION_ENABLED = os.getenv("VISION_ENABLED", "true").lower() == "true"
 
 # Folder for rendered slide images, relative to the storage directory
 SLIDE_IMAGE_DIR = STORAGE_DIR
+
+# Max tokens the model may write in one reply (the minutes JSON needs well under this)
+OLLAMA_NUM_PREDICT = int(os.getenv("OLLAMA_NUM_PREDICT", "3000"))

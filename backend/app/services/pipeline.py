@@ -130,13 +130,15 @@ def run_analysis(meeting_id: str) -> None:
         visuals: list[dict] = []
         if VISION_ENABLED and slide_rows:
             _set_stage(db, job, "reading slide diagrams")
-            for row, data in slide_rows:
+            for index, (row, data) in enumerate(slide_rows, start=1):
                 if data.image_path is None:
                     continue
+                logger.info("Vision: slide %d of %d", index, len(slide_rows))
                 try:
                     result, _raw = chat_json_with_retry(
                         SLIDE_VISION_PROMPT.format(slide_number=row.slide_number),
                         image_paths=[data.image_path],
+                        label=f"vision slide {row.slide_number}",
                     )
                 except LLMError as exc:
                     logger.warning("Vision failed for slide %s: %s", row.slide_number, exc)
@@ -171,7 +173,8 @@ def run_analysis(meeting_id: str) -> None:
         prompt = MINUTES_PROMPT.format(
             slides=slides_text, visuals=visuals_text, transcript=transcript_text,
         )
-        minutes, raw = chat_json_with_retry(prompt)
+        logger.info("Minutes: prompt is %d chars", len(prompt))
+        minutes, raw = chat_json_with_retry(prompt, label="minutes")
 
         valid_seqs = {s.seq for s in transcript_lines}
         overview = minutes.get("meeting_overview") if isinstance(minutes.get("meeting_overview"), dict) else {}

@@ -3,11 +3,12 @@ import base64
 import json
 import logging
 import re
+import time
 from pathlib import Path
 
 import requests
 
-from app.config import OLLAMA_MODEL, OLLAMA_NUM_CTX, OLLAMA_TIMEOUT_SEC, OLLAMA_URL
+from app.config import OLLAMA_MODEL, OLLAMA_NUM_CTX, OLLAMA_NUM_PREDICT, OLLAMA_TIMEOUT_SEC, OLLAMA_URL
 
 logger = logging.getLogger("meetingiq.llm")
 
@@ -24,17 +25,17 @@ def _parse_json(content: str) -> dict:
     except json.JSONDecodeError:
         match = re.search(r"\{.*\}", text, flags=re.DOTALL)
         if not match:
-            raise LLMError("Model did not return a JSON object.")
+            raise LLMError(f"Model did not return a JSON object. Start of reply: {text[:300]!r}")
         try:
             data = json.loads(match.group(0))
         except json.JSONDecodeError as exc:
-            raise LLMError(f"Model returned invalid JSON: {exc}") from exc
+            raise LLMError(f"Model returned invalid JSON: {exc}. Start of reply: {text[:300]!r}") from exc
     if not isinstance(data, dict):
         raise LLMError("Model returned JSON that is not an object.")
     return data
 
 
-def chat_json(prompt: str, image_paths: list[Path] | None = None) -> tuple[dict, str]:
+def chat_json(prompt: str, image_paths: list[Path] | None = None, label: str = "llm") -> tuple[dict, str]:
     """Send a prompt (optionally with images) and return (parsed JSON, raw text)."""
     message: dict = {"role": "user", "content": prompt}
     if image_paths:
@@ -48,8 +49,15 @@ def chat_json(prompt: str, image_paths: list[Path] | None = None) -> tuple[dict,
         "format": "json",
         "stream": False,
         "think": False,  # no reasoning text before the JSON
-        "options": {"temperature": 0.2, "num_ctx": OLLAMA_NUM_CTX},
+        "options": {
+            "temperature": 0.2,
+            "num_ctx": OLLAMA_NUM_CTX,
+            "num_predict": OLLAMA_NUM_PREDICT,  # hard cap on reply length
+        },
     }
+    started = time.time()
+    logger.info("[%s] sending request to %s (prompt %d chars, %d image(s))",
+                label, OLLAMA_MODEL, len(prompt), len(image_paths or []))
     try:
         resp = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=OLLAMA_TIMEOUT_SEC)
         resp.raise_for_status()
@@ -58,18 +66,21 @@ def chat_json(prompt: str, image_paths: list[Path] | None = None) -> tuple[dict,
             f"Could not reach Ollama at {OLLAMA_URL} (is it running, and is '{OLLAMA_MODEL}' pulled?): {exc}"
         ) from exc
 
-    raw = resp.json().get("message", {}).get("content", "")
+    body = resp.json()
+    raw = body.get("message", {}).get("content", "")
+    logger.info("[%s] reply in %.1fs: %d chars, done_reason=%s",
+                label, time.time() - started, len(raw), body.get("done_reason"))
     return _parse_json(raw), raw
 
 
 def chat_json_with_retry(prompt: str, image_paths: list[Path] | None = None,
-                         attempts: int = 2) -> tuple[dict, str]:
+                         attempts: int = 2, label: str = "llm") -> tuple[dict, str]:
     """Retry once when the model returns invalid JSON (small models sometimes do)."""
     last_error: Exception | None = None
     for attempt in range(1, attempts + 1):
         try:
-            return chat_json(prompt, image_paths)
+            return chat_json(prompt, image_paths, label=label)
         except LLMError as exc:
             last_error = exc
-            logger.warning("LLM attempt %d/%d failed: %s", attempt, attempts, exc)
+            logger.warning("[%s] attempt %d/%d failed: %s", label, attempt, attempts, exc)
     raise LLMError(str(last_error))
