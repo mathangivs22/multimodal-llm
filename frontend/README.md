@@ -18,7 +18,7 @@ Open http://localhost:5173
 
 | Route | Page |
 |---|---|
-| `/` | Meetings list with each meeting's status |
+| `/` | Meetings list with each meeting's status, search and status filters |
 | `/meetings/new` | Upload page: title, description, recording, slides |
 | `/meetings/:id` | Meeting details, uploaded files and analysis status (View results / Retry analysis) |
 | `/meetings/:id/results` | Results: minutes of the meeting, then conflicts. Only for completed meetings. Email minutes, Copy as text, Print or save as PDF |
@@ -39,11 +39,17 @@ src/
                 SettingsPage, NotFoundPage
   services/     api.js (all backend calls), server.js (server address), native.js (app-only behaviour)
   utils/        files.js (upload rules matching the backend), time.js, analysisState.js, usePolling.js,
-                minutesText.js (minutes as plain text for email and copying), conflicts.js, clipboard.js, theme.js
+                minutesText.js (minutes as plain text for email and copying), conflicts.js, clipboard.js, theme.js, search.js
   styles.css    design tokens and all styles, including the print layout
 ```
 
 To build against a backend on another address (for example a hosted API), set `VITE_API_URL` when building: `VITE_API_URL=https://api.example.com npm run build`.
+
+## Searching meetings
+
+The search box on the Meetings page filters the list as you type. It looks in each meeting's **title and description**, ignores upper/lower case and accents, matches parts of words ("spr" finds "Sprint"), and every word must match ("sprint 14" finds "Sprint 14 planning" but not "Sprint 15"). The status chips (Analyzed, Analyzing, Ready, Waiting for files, Failed) narrow it further; their counts follow the search text.
+
+The search is kept in the address (`/?q=sprint&status=completed`), so Back from a meeting returns to the same results and the link can be shared. Press `/` to jump to the search box and Esc to clear it. It doesn't search the minutes, conflicts or transcripts. Matching rules are in `src/utils/search.js`.
 
 ## Dark mode
 

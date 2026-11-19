@@ -1,4 +1,4 @@
-const LABELS = {
+export const STATUS_LABELS = {
   created: "Waiting for files",
   uploaded: "Ready to analyze",
   processing: "Analyzing",
@@ -10,7 +10,7 @@ export default function StatusBadge({ status }) {
   return (
     <span className={`badge badge-${status}`}>
       <span className="badge-dot" aria-hidden="true" />
-      {LABELS[status] ?? status}
+      {STATUS_LABELS[status] ?? status}
     </span>
   );
 }
