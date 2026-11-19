@@ -87,12 +87,29 @@ export default function MeetingDetailPage() {
         )}
       </section>
 
-      <section className="panel panel-quiet">
-        <h2>Analysis</h2>
-        <p className="muted">
-          Transcription, slide reading and decision tracking arrive in the next phase. Results will appear here.
-        </p>
-      </section>
+      {meeting.status === "completed" ? (
+        <section className="panel analysis-ready">
+          <div>
+            <h2>Analysis</h2>
+            <p className="muted">Minutes, decisions, conflicts, the transcript and the slides are ready.</p>
+          </div>
+          <Link to="results" className="btn-primary">
+            View results
+          </Link>
+        </section>
+      ) : (
+        <section className="panel panel-quiet analysis-ready">
+          <div>
+            <h2>Analysis</h2>
+            <p className="muted">
+              This meeting hasn't been analyzed yet. You can preview the results page with sample data.
+            </p>
+          </div>
+          <Link to="results" className="btn-secondary">
+            Preview results
+          </Link>
+        </section>
+      )}
     </div>
   );
 }

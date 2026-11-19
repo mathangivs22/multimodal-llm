@@ -45,3 +45,9 @@ export async function uploadMeetingFiles(meetingId, files, onProgress) {
   });
   return data;
 }
+
+/** Analysis result: minutes, transcript, slides and conflicts (see backend/app/analysis_schemas.py). */
+export async function getMeetingAnalysis(meetingId) {
+  const { data } = await api.get(`/meetings/${meetingId}/analysis`);
+  return data;
+}

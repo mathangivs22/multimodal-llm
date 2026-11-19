@@ -66,7 +66,16 @@ Error checks: uploading a `.txt` returns 415, an unknown meeting ID returns 404,
 | GET | /api/meetings | List meetings (newest first) |
 | GET | /api/meetings/{id} | Meeting details with files |
 | POST | /api/meetings/{id}/files | Upload one or more files |
+| GET | /api/meetings/{id}/analysis | Analysis result for the results page |
 
 ## Limits
 
 Audio (.mp3 .wav .m4a .ogg .flac) 200 MB; video (.mp4 .mov .mkv .webm) 1 GB; presentations (.pptx .pdf) 100 MB. Change these in `app/config.py`.
+
+## Analysis results
+
+`GET /api/meetings/{id}/analysis` returns the minutes, decisions, action items, conflicts, transcript and slides that the results page (`/meetings/{id}/results`) displays. The format is defined in `app/analysis_schemas.py`.
+
+- The analysis pipeline writes its result to `storage/meetings/<meeting_id>/analysis.json` in that format. The endpoint validates it, including that every speaker, transcript and slide reference points at something real, and returns 500 with a log message if it doesn't.
+- Until that file exists, the endpoint returns the sample in `app/sample_data/sample_analysis.json` with `"is_sample": true`, and the page shows a "Sample results" banner. Set `SERVE_SAMPLE_ANALYSIS=false` in `.env` to return 404 instead.
+- Use the sample file as a worked example of the format.

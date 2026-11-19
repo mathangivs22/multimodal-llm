@@ -1,0 +1,199 @@
+{
+  "meeting_id": "sample",
+  "is_sample": true,
+  "generated_at": "2026-11-19T10:00:00Z",
+  "duration_seconds": 1920,
+  "participants": [
+    { "id": "p1", "name": "Priya Raman", "role": "Product manager" },
+    { "id": "p2", "name": "Marcus Lee", "role": "Engineering lead" },
+    { "id": "p3", "name": "Elena Ortiz", "role": "Design lead" },
+    { "id": "p4", "name": "Tom Becker", "role": "Finance" }
+  ],
+  "summary": {
+    "overview": "The team agreed to move the mobile app's public launch to March 3 to make room for offline mode, and to defer in-app chat to v1.1. The launch marketing budget is still open: the deck shows $120,000, but finance says $95,000 was approved.",
+    "key_points": [
+      "Offline mode stays in v1, and it is the main reason the launch date moved.",
+      "The internal beta stays on January 10.",
+      "In-app chat moves to v1.1 because the message service isn't built yet.",
+      "Launch events spend is on hold until finance confirms the budget.",
+      "App store review in February may take longer than the plan allows."
+    ]
+  },
+  "topics": [
+    {
+      "id": "t1", "title": "Launch date", "start": 0, "end": 330,
+      "summary": "Engineering said offline mode makes February 14 unrealistic. The public launch moved to March 3, and the beta stays on January 10.",
+      "evidence": [{ "type": "transcript", "id": "seg-03" }, { "type": "transcript", "id": "seg-07" }]
+    },
+    {
+      "id": "t2", "title": "Marketing budget", "start": 330, "end": 780,
+      "summary": "The deck's $120,000 conflicts with the $95,000 finance approved last week. Left open until Tom confirms.",
+      "evidence": [{ "type": "transcript", "id": "seg-09" }, { "type": "transcript", "id": "seg-13" }]
+    },
+    {
+      "id": "t3", "title": "v1 feature scope", "start": 780, "end": 1380,
+      "summary": "Design and engineering disagreed about in-app chat. It was deferred to v1.1; dark mode stays in.",
+      "evidence": [{ "type": "transcript", "id": "seg-15" }, { "type": "transcript", "id": "seg-16" }, { "type": "transcript", "id": "seg-19" }]
+    },
+    {
+      "id": "t4", "title": "Timeline and risks", "start": 1380, "end": 1920,
+      "summary": "App store review timing and the offline sync estimate are the main risks to March 3.",
+      "evidence": [{ "type": "transcript", "id": "seg-22" }, { "type": "transcript", "id": "seg-23" }]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "d1", "text": "Move the public launch from February 14 to March 3.",
+      "decided_by": ["p1", "p2", "p4"],
+      "evidence": [{ "type": "transcript", "id": "seg-05" }, { "type": "transcript", "id": "seg-07" }]
+    },
+    {
+      "id": "d2", "text": "Keep the internal beta on January 10.",
+      "decided_by": ["p1"],
+      "evidence": [{ "type": "transcript", "id": "seg-07" }]
+    },
+    {
+      "id": "d3", "text": "Defer in-app chat to v1.1 and say so in the launch notes.",
+      "decided_by": ["p1", "p3"],
+      "evidence": [{ "type": "transcript", "id": "seg-19" }, { "type": "transcript", "id": "seg-20" }]
+    },
+    {
+      "id": "d4", "text": "Hold launch events spend until finance confirms the budget.",
+      "decided_by": ["p1"],
+      "evidence": [{ "type": "transcript", "id": "seg-13" }]
+    }
+  ],
+  "action_items": [
+    {
+      "id": "a1", "task": "Confirm the final launch marketing budget with finance",
+      "owner_id": "p4", "due_date": "2026-11-23",
+      "evidence": [{ "type": "transcript", "id": "seg-13" }]
+    },
+    {
+      "id": "a2", "task": "Update the launch deck with the March 3 date",
+      "owner_id": "p1", "due_date": "2026-11-24",
+      "evidence": [{ "type": "transcript", "id": "seg-07" }, { "type": "slide", "id": "s1" }]
+    },
+    {
+      "id": "a3", "task": "Estimate offline sync work to confirm March 3 holds",
+      "owner_id": "p2", "due_date": "2026-11-28",
+      "evidence": [{ "type": "transcript", "id": "seg-23" }]
+    },
+    {
+      "id": "a4", "task": "Deliver dark mode design specs",
+      "owner_id": "p3", "due_date": "2026-12-04",
+      "evidence": [{ "type": "transcript", "id": "seg-21" }]
+    },
+    {
+      "id": "a5", "task": "Add the chat deferral to the launch notes",
+      "owner_id": "p1", "due_date": null,
+      "evidence": [{ "type": "transcript", "id": "seg-19" }]
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "c1", "kind": "speech_vs_slide", "severity": "high", "status": "unresolved",
+      "title": "Marketing budget: $120,000 on the slide, $95,000 approved",
+      "description": "The budget slide shows $120,000 for launch marketing, but finance says only $95,000 was approved and the events line was cut. Tom will confirm the number by Monday.",
+      "positions": [
+        {
+          "speaker_id": null,
+          "statement": "Total launch marketing budget: $120,000, including $20,000 for launch events.",
+          "evidence": [{ "type": "slide", "id": "s2" }, { "type": "transcript", "id": "seg-08" }]
+        },
+        {
+          "speaker_id": "p4",
+          "statement": "Finance approved $95,000 last week, and the events line was cut.",
+          "evidence": [{ "type": "transcript", "id": "seg-09" }, { "type": "transcript", "id": "seg-11" }]
+        }
+      ],
+      "resolution": null
+    },
+    {
+      "id": "c2", "kind": "speech_vs_slide", "severity": "high", "status": "resolved",
+      "title": "Launch date: February 14 on the slide, early March in discussion",
+      "description": "The launch plan slide shows February 14, but engineering said the date isn't achievable with offline mode in scope.",
+      "positions": [
+        {
+          "speaker_id": null,
+          "statement": "Public launch: February 14.",
+          "evidence": [{ "type": "slide", "id": "s1" }, { "type": "transcript", "id": "seg-02" }]
+        },
+        {
+          "speaker_id": "p2",
+          "statement": "February 14 isn't realistic with offline mode. March 3, including two weeks of hardening.",
+          "evidence": [{ "type": "transcript", "id": "seg-03" }, { "type": "transcript", "id": "seg-05" }]
+        }
+      ],
+      "resolution": "Launch moved to March 3. Priya will update the deck."
+    },
+    {
+      "id": "c3", "kind": "speaker_disagreement", "severity": "medium", "status": "resolved",
+      "title": "Whether in-app chat ships in v1",
+      "description": "Design wanted chat in v1 because users ask for it most. Engineering said the message service it depends on can't be built safely alongside offline mode.",
+      "positions": [
+        {
+          "speaker_id": "p3",
+          "statement": "Keep chat in v1: it's the top beta request. A reduced, one-to-one version would do.",
+          "evidence": [{ "type": "transcript", "id": "seg-15" }, { "type": "transcript", "id": "seg-17" }]
+        },
+        {
+          "speaker_id": "p2",
+          "statement": "Even one-to-one chat needs a message service and moderation backend that don't exist yet. Too risky next to offline mode.",
+          "evidence": [{ "type": "transcript", "id": "seg-16" }, { "type": "transcript", "id": "seg-18" }]
+        }
+      ],
+      "resolution": "Chat deferred to v1.1. Elena agreed, though it wasn't her preference."
+    },
+    {
+      "id": "c4", "kind": "speech_vs_slide", "severity": "low", "status": "unresolved",
+      "title": "App store review buffer: 5 days on the slide, 10 suggested",
+      "description": "The risks slide allows 5 days for app store review. Marcus suggested submitting at least 10 days before launch. The plan wasn't updated.",
+      "positions": [
+        {
+          "speaker_id": null,
+          "statement": "App store review: allow 5 days.",
+          "evidence": [{ "type": "slide", "id": "s4" }]
+        },
+        {
+          "speaker_id": "p2",
+          "statement": "Review times in February are unpredictable. Submit at least ten days before launch.",
+          "evidence": [{ "type": "transcript", "id": "seg-22" }]
+        }
+      ],
+      "resolution": null
+    }
+  ],
+  "transcript": [
+    { "id": "seg-01", "speaker_id": "p1", "start": 12, "end": 34, "slide_id": "s1", "text": "Thanks everyone. Today we need to lock the launch plan for the mobile app, agree the marketing budget, and settle what goes into v1." },
+    { "id": "seg-02", "speaker_id": "p1", "start": 35, "end": 62, "slide_id": "s1", "text": "As you can see on the slide, the target is a public launch on February 14th, with the internal beta on January 10th." },
+    { "id": "seg-03", "speaker_id": "p2", "start": 95, "end": 138, "slide_id": "s1", "text": "I have to be honest, February 14th isn't realistic if offline mode stays in scope. Sync conflict handling alone is three to four weeks. Realistically we're looking at early March." },
+    { "id": "seg-04", "speaker_id": "p1", "start": 140, "end": 158, "slide_id": "s1", "text": "How early? I need a date I can give marketing." },
+    { "id": "seg-05", "speaker_id": "p2", "start": 160, "end": 185, "slide_id": "s1", "text": "March 3rd. That includes two weeks of hardening after the beta." },
+    { "id": "seg-06", "speaker_id": "p4", "start": 190, "end": 214, "slide_id": "s1", "text": "A slip to March is fine from finance's side, as long as the campaign spend moves with it." },
+    { "id": "seg-07", "speaker_id": "p1", "start": 220, "end": 250, "slide_id": "s1", "text": "Okay. Let's move the public launch to March 3rd and keep the internal beta on January 10th. I'll update the deck." },
+    { "id": "seg-08", "speaker_id": "p1", "start": 340, "end": 372, "slide_id": "s2", "text": "Next, budget. The slide shows a hundred and twenty thousand for launch marketing: seventy for paid ads, thirty for influencers, twenty for events." },
+    { "id": "seg-09", "speaker_id": "p4", "start": 380, "end": 420, "slide_id": "s2", "text": "That number is out of date. What finance approved last week was ninety-five thousand, not one-twenty. The events line was cut." },
+    { "id": "seg-10", "speaker_id": "p1", "start": 425, "end": 450, "slide_id": "s2", "text": "That's news to me. The one-twenty came from the October planning review." },
+    { "id": "seg-11", "speaker_id": "p4", "start": 455, "end": 490, "slide_id": "s2", "text": "October was before the reforecast. I'd plan around ninety-five until we hear otherwise." },
+    { "id": "seg-12", "speaker_id": "p3", "start": 500, "end": 530, "slide_id": "s2", "text": "If events are cut, we need to know soon. The booth design work is already scheduled." },
+    { "id": "seg-13", "speaker_id": "p1", "start": 540, "end": 575, "slide_id": "s2", "text": "Let's not decide this in the room. Tom, can you confirm the final number with finance by Monday? We'll hold the events spend until then." },
+    { "id": "seg-14", "speaker_id": "p1", "start": 790, "end": 815, "slide_id": "s3", "text": "Scope for v1. The slide lists offline mode, dark mode and in-app chat." },
+    { "id": "seg-15", "speaker_id": "p3", "start": 820, "end": 868, "slide_id": "s3", "text": "I'd really push to keep chat in v1. It's the top request in the beta survey, and the support team is counting on it to cut email volume." },
+    { "id": "seg-16", "speaker_id": "p2", "start": 872, "end": 920, "slide_id": "s3", "text": "I get that, but chat needs a moderation backend and push infrastructure we haven't built. Shipping it in the same release as offline mode is too much risk." },
+    { "id": "seg-17", "speaker_id": "p3", "start": 925, "end": 950, "slide_id": "s3", "text": "Could we ship a reduced version? One-to-one support chat only, no group threads." },
+    { "id": "seg-18", "speaker_id": "p2", "start": 955, "end": 990, "slide_id": "s3", "text": "Even one-to-one needs the message service. That's the expensive part, not the threads." },
+    { "id": "seg-19", "speaker_id": "p1", "start": 1010, "end": 1050, "slide_id": "s3", "text": "I'm hearing chat can't be done safely by March 3rd. Let's defer in-app chat to v1.1 and say so clearly in the launch notes. Elena, is that workable?" },
+    { "id": "seg-20", "speaker_id": "p3", "start": 1055, "end": 1075, "slide_id": "s3", "text": "Workable. Not my preference, but I agree the date matters more." },
+    { "id": "seg-21", "speaker_id": "p3", "start": 1120, "end": 1160, "slide_id": "s3", "text": "Dark mode, on the other hand, is cheap. I can have the full specs ready by early December." },
+    { "id": "seg-22", "speaker_id": "p2", "start": 1400, "end": 1440, "slide_id": "s4", "text": "On risks: app store review times in February are unpredictable, so we should submit at least ten days before launch." },
+    { "id": "seg-23", "speaker_id": "p2", "start": 1445, "end": 1480, "slide_id": "s4", "text": "And I'll have a proper estimate for offline sync by the 28th, so we know whether March 3rd holds." },
+    { "id": "seg-24", "speaker_id": "p1", "start": 1820, "end": 1850, "slide_id": "s4", "text": "Great. To recap: launch moves to March 3rd, chat moves to v1.1, and the budget waits on Tom's confirmation. Thanks, all." }
+  ],
+  "slides": [
+    { "id": "s1", "number": 1, "title": "Launch plan", "text": "Internal beta: January 10\nPublic launch: February 14\nPlatforms: iOS and Android", "shown_at": [{ "start": 0, "end": 330 }] },
+    { "id": "s2", "number": 2, "title": "Launch marketing budget", "text": "Total: $120,000\n• Paid ads: $70,000\n• Influencer partnerships: $30,000\n• Launch events: $20,000", "shown_at": [{ "start": 330, "end": 780 }] },
+    { "id": "s3", "number": 3, "title": "v1 feature scope", "text": "• Offline mode\n• Dark mode\n• In-app chat", "shown_at": [{ "start": 780, "end": 1380 }] },
+    { "id": "s4", "number": 4, "title": "Timeline and risks", "text": "• Beta feedback window: 3 weeks\n• App store review: allow 5 days\n• Risk: offline sync complexity", "shown_at": [{ "start": 1380, "end": 1920 }] }
+  ]
+}

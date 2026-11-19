@@ -5,10 +5,11 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.analysis_schemas import MeetingAnalysis
 from app.database import get_db
 from app.models import Meeting, MeetingFile
 from app.schemas import MeetingCreate, MeetingDetail, MeetingFileOut, MeetingOut, UploadResult
-from app.services import storage
+from app.services import analysis, storage
 
 logger = logging.getLogger("meetingiq.api")
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
@@ -39,6 +40,14 @@ def list_meetings(db: Session = Depends(get_db)):
 @router.get("/{meeting_id}", response_model=MeetingDetail)
 def get_meeting(meeting_id: str, db: Session = Depends(get_db)):
     return _get_meeting_or_404(db, meeting_id)
+
+
+@router.get("/{meeting_id}/analysis", response_model=MeetingAnalysis)
+def get_meeting_analysis(meeting_id: str, db: Session = Depends(get_db)):
+    """Minutes, transcript, slides and conflicts produced by the analysis pipeline."""
+    if db.get(Meeting, meeting_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found.")
+    return analysis.load_analysis(meeting_id)
 
 
 @router.post("/{meeting_id}/files", response_model=UploadResult, status_code=status.HTTP_201_CREATED)

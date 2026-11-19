@@ -1,0 +1,155 @@
+import { useCallback, useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import ConflictsSection from "../components/results/ConflictsSection.jsx";
+import MinutesSection from "../components/results/MinutesSection.jsx";
+import { ResultsProvider } from "../components/results/ResultsContext.jsx";
+import SlidesSection from "../components/results/SlidesSection.jsx";
+import TranscriptSection from "../components/results/TranscriptSection.jsx";
+import { errorMessage, getMeeting, getMeetingAnalysis } from "../services/api.js";
+import { formatDate } from "../utils/files.js";
+import { formatDuration } from "../utils/time.js";
+
+const NO_FILTERS = { query: "", speaker: "" };
+
+export default function MeetingResultsPage() {
+  const { meetingId } = useParams();
+  const [meeting, setMeeting] = useState(null);
+  const [analysis, setAnalysis] = useState(null);
+  const [error, setError] = useState(null);
+  const [filters, setFilters] = useState(NO_FILTERS);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMeeting(null);
+    setAnalysis(null);
+    setError(null);
+    Promise.all([getMeeting(meetingId), getMeetingAnalysis(meetingId)])
+      .then(([m, a]) => {
+        if (cancelled) return;
+        setMeeting(m);
+        setAnalysis(a);
+      })
+      .catch((err) => !cancelled && setError(errorMessage(err)));
+    return () => {
+      cancelled = true;
+    };
+  }, [meetingId]);
+
+  // The printed minutes should always contain the full transcript
+  useEffect(() => {
+    const reset = () => setFilters(NO_FILTERS);
+    window.addEventListener("beforeprint", reset);
+    return () => window.removeEventListener("beforeprint", reset);
+  }, []);
+
+  const clearFilters = useCallback(() => setFilters(NO_FILTERS), []);
+
+  if (error) {
+    return (
+      <div className="page">
+        <div className="notice notice-error" role="alert">
+          <p>{error}</p>
+          <Link to={`/meetings/${meetingId}`} className="btn-secondary">
+            Back to meeting
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analysis) return <div className="page"><p className="muted">Loading results…</p></div>;
+
+  const openConflicts = analysis.conflicts.filter((c) => c.status === "unresolved").length;
+  const sections = [
+    { id: "minutes", label: "Minutes" },
+    { id: "conflicts", label: "Conflicts", count: analysis.conflicts.length, alert: openConflicts > 0 },
+    { id: "transcript", label: "Transcript", count: analysis.transcript.length },
+    { id: "slides", label: "Slides", count: analysis.slides.length },
+  ];
+
+  return (
+    <ResultsProvider analysis={analysis} beforeJump={clearFilters}>
+      <div className="page results-page">
+        <Link to={`/meetings/${meetingId}`} className="back-link no-print">
+          Meeting details
+        </Link>
+
+        {analysis.is_sample && (
+          <div className="notice notice-sample no-print" role="status">
+            <p>
+              <strong>Sample results.</strong> This meeting hasn't been analyzed yet, so the page shows
+              example data. Real results will replace it once the analysis pipeline runs.
+            </p>
+          </div>
+        )}
+
+        <header className="page-head">
+          <div>
+            <p className="eyebrow">Meeting results</p>
+            <h1>{meeting.title}</h1>
+            <p className="results-meta">
+              <span>{formatDate(meeting.created_at)}</span>
+              <span>{formatDuration(analysis.duration_seconds)}</span>
+              <span>{analysis.participants.length} attendees</span>
+            </p>
+          </div>
+          <button type="button" className="btn-secondary no-print" onClick={() => window.print()}>
+            <PrintIcon />
+            Print or save as PDF
+          </button>
+        </header>
+
+        <Glance analysis={analysis} openConflicts={openConflicts} />
+
+        <nav className="section-nav no-print" aria-label="Results sections">
+          {sections.map((s) => (
+            <a key={s.id} href={`#${s.id}`} className="section-nav-link">
+              {s.label}
+              {s.count > 0 && <span className={`count ${s.alert ? "count-alert" : ""}`}>{s.count}</span>}
+            </a>
+          ))}
+        </nav>
+
+        <MinutesSection />
+        <ConflictsSection />
+        <TranscriptSection filters={filters} onFiltersChange={setFilters} />
+        <SlidesSection />
+      </div>
+    </ResultsProvider>
+  );
+}
+
+function Glance({ analysis, openConflicts }) {
+  const items = [
+    { value: analysis.decisions.length, label: "Decisions", href: "#minutes" },
+    { value: analysis.action_items.length, label: "Action items", href: "#minutes" },
+    {
+      value: openConflicts,
+      label: openConflicts === 1 ? "Unresolved conflict" : "Unresolved conflicts",
+      href: "#conflicts",
+      alert: openConflicts > 0,
+    },
+    { value: analysis.slides.length, label: "Slides shown", href: "#slides" },
+  ];
+  return (
+    <ul className="glance" aria-label="At a glance">
+      {items.map((it) => (
+        <li key={it.label}>
+          <a href={it.href} className={`glance-item ${it.alert ? "glance-alert" : ""}`}>
+            <span className="glance-value">{it.value}</span>
+            <span className="glance-label">{it.label}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PrintIcon() {
+  return (
+    <svg className="btn-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M4 6V1.5h8V6M4 12H2.5A1 1 0 0 1 1.5 11V7a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H12M4 9.5h8v5H4z"
+        fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
