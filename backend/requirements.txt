@@ -14,3 +14,4 @@ pymupdf>=1.24
 requests>=2.31
 # Windows only: PowerPoint slide rendering via COM
 pywin32>=306; sys_platform == "win32"
+pillow>=10.0

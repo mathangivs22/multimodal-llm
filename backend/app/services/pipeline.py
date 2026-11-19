@@ -8,7 +8,10 @@ import logging
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from app.config import BASE_DIR, STORAGE_DIR, OLLAMA_MODEL, VISION_ENABLED
+from app.config import (
+    BASE_DIR, MINUTES_MODEL, STORAGE_DIR, VISION_ENABLED, VISION_IMAGE_MAX_SIDE,
+    VISION_MODEL, VISION_NUM_PREDICT,
+)
 from app.database import SessionLocal
 from app.models import (
     ActionItem, AnalysisJob, Decision, Meeting, MeetingFile, MeetingMinutes,
@@ -17,6 +20,7 @@ from app.models import (
 from app.services import slides as slide_service
 from app.services import transcription
 from app.services.llm import LLMError, chat_json_with_retry
+from app.services.images import shrink_image
 from app.services.prompts import MINUTES_PROMPT, SLIDE_VISION_PROMPT
 
 logger = logging.getLogger("meetingiq.pipeline")
@@ -135,9 +139,12 @@ def run_analysis(meeting_id: str) -> None:
                     continue
                 logger.info("Vision: slide %d of %d", index, len(slide_rows))
                 try:
+                    small = shrink_image(data.image_path, VISION_IMAGE_MAX_SIDE)
                     result, _raw = chat_json_with_retry(
                         SLIDE_VISION_PROMPT.format(slide_number=row.slide_number),
-                        image_paths=[data.image_path],
+                        image_paths=[small],
+                        model=VISION_MODEL,
+                        num_predict=VISION_NUM_PREDICT,
                         label=f"vision slide {row.slide_number}",
                     )
                 except LLMError as exc:
@@ -150,7 +157,7 @@ def run_analysis(meeting_id: str) -> None:
                     relationships=_as_list(result.get("relationships")),
                     workflow_steps=_as_list(result.get("workflow_steps")),
                     uncertain_relationships=_as_list(result.get("uncertain_relationships")),
-                    model_name=OLLAMA_MODEL,
+                    model_name=VISION_MODEL,
                 ))
                 visuals.append({"slide_number": row.slide_number, **result})
             db.commit()
@@ -174,7 +181,7 @@ def run_analysis(meeting_id: str) -> None:
             slides=slides_text, visuals=visuals_text, transcript=transcript_text,
         )
         logger.info("Minutes: prompt is %d chars", len(prompt))
-        minutes, raw = chat_json_with_retry(prompt, label="minutes")
+        minutes, raw = chat_json_with_retry(prompt, model=MINUTES_MODEL, label="minutes")
 
         valid_seqs = {s.seq for s in transcript_lines}
         overview = minutes.get("meeting_overview") if isinstance(minutes.get("meeting_overview"), dict) else {}
@@ -187,7 +194,7 @@ def run_analysis(meeting_id: str) -> None:
             pending_items=[str(x) for x in _as_list(minutes.get("pending_items"))],
             next_meeting=str(minutes.get("next_meeting") or "")[:500] or None,
             raw_json=raw,
-            model_name=OLLAMA_MODEL,
+            model_name=MINUTES_MODEL,
         ))
 
         for item in _as_list(minutes.get("key_decisions")):

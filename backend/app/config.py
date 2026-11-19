@@ -42,7 +42,14 @@ CHUNK_SIZE = 1024 * 1024  # stream uploads to disk 1 MB at a time
 
 # Ollama runs locally; the backend must be on the same machine to reach it.
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3-vl:4b")
+# Vision model reads slide diagrams (must support images)
+VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "qwen3-vl:4b")
+# Text model writes the minutes (should answer directly, without reasoning text)
+MINUTES_MODEL = os.getenv("OLLAMA_MINUTES_MODEL", "qwen2.5:3b")
+# Cap for one diagram reply; a slide description is much shorter than the minutes
+VISION_NUM_PREDICT = int(os.getenv("VISION_NUM_PREDICT", "800"))
+# Longest side of a slide image sent to the vision model, in pixels
+VISION_IMAGE_MAX_SIDE = int(os.getenv("VISION_IMAGE_MAX_SIDE", "1024"))
 # Ollama's default context is small; long transcripts would be silently cut off.
 OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "16384"))
 OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "900"))

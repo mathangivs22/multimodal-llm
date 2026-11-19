@@ -8,13 +8,17 @@ from pathlib import Path
 
 import requests
 
-from app.config import OLLAMA_MODEL, OLLAMA_NUM_CTX, OLLAMA_NUM_PREDICT, OLLAMA_TIMEOUT_SEC, OLLAMA_URL
+from app.config import OLLAMA_NUM_CTX, OLLAMA_NUM_PREDICT, OLLAMA_TIMEOUT_SEC, OLLAMA_URL
 
 logger = logging.getLogger("meetingiq.llm")
 
 
 class LLMError(RuntimeError):
     pass
+
+
+class LLMTruncated(LLMError):
+    """The reply hit the token cap. Retrying the same request would hit it again."""
 
 
 def _parse_json(content: str) -> dict:
@@ -35,7 +39,8 @@ def _parse_json(content: str) -> dict:
     return data
 
 
-def chat_json(prompt: str, image_paths: list[Path] | None = None, label: str = "llm") -> tuple[dict, str]:
+def chat_json(prompt: str, image_paths: list[Path] | None, model: str, label: str,
+              num_predict: int) -> tuple[dict, str]:
     """Send a prompt (optionally with images) and return (parsed JSON, raw text)."""
     message: dict = {"role": "user", "content": prompt}
     if image_paths:
@@ -44,7 +49,7 @@ def chat_json(prompt: str, image_paths: list[Path] | None = None, label: str = "
         ]
 
     payload = {
-        "model": OLLAMA_MODEL,
+        "model": model,
         "messages": [message],
         "format": "json",
         "stream": False,
@@ -52,34 +57,40 @@ def chat_json(prompt: str, image_paths: list[Path] | None = None, label: str = "
         "options": {
             "temperature": 0.2,
             "num_ctx": OLLAMA_NUM_CTX,
-            "num_predict": OLLAMA_NUM_PREDICT,  # hard cap on reply length
+            "num_predict": num_predict,  # hard cap on reply length
         },
     }
     started = time.time()
     logger.info("[%s] sending request to %s (prompt %d chars, %d image(s))",
-                label, OLLAMA_MODEL, len(prompt), len(image_paths or []))
+                label, model, len(prompt), len(image_paths or []))
     try:
         resp = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=OLLAMA_TIMEOUT_SEC)
         resp.raise_for_status()
     except requests.RequestException as exc:
         raise LLMError(
-            f"Could not reach Ollama at {OLLAMA_URL} (is it running, and is '{OLLAMA_MODEL}' pulled?): {exc}"
+            f"Could not reach Ollama at {OLLAMA_URL} (is it running, and is '{model}' pulled?): {exc}"
         ) from exc
 
     body = resp.json()
     raw = body.get("message", {}).get("content", "")
+    done_reason = body.get("done_reason")
     logger.info("[%s] reply in %.1fs: %d chars, done_reason=%s",
-                label, time.time() - started, len(raw), body.get("done_reason"))
+                label, time.time() - started, len(raw), done_reason)
+    if done_reason == "length":
+        raise LLMTruncated(f"{label}: reply hit the {num_predict}-token cap before finishing.")
     return _parse_json(raw), raw
 
 
-def chat_json_with_retry(prompt: str, image_paths: list[Path] | None = None,
-                         attempts: int = 2, label: str = "llm") -> tuple[dict, str]:
-    """Retry once when the model returns invalid JSON (small models sometimes do)."""
+def chat_json_with_retry(prompt: str, image_paths: list[Path] | None = None, *,
+                         model: str, label: str, num_predict: int = OLLAMA_NUM_PREDICT,
+                         attempts: int = 2) -> tuple[dict, str]:
+    """Retry once when the reply is invalid JSON, but never retry a truncated reply."""
     last_error: Exception | None = None
     for attempt in range(1, attempts + 1):
         try:
-            return chat_json(prompt, image_paths, label=label)
+            return chat_json(prompt, image_paths, model, label, num_predict)
+        except LLMTruncated:
+            raise
         except LLMError as exc:
             last_error = exc
             logger.warning("[%s] attempt %d/%d failed: %s", label, attempt, attempts, exc)

@@ -42,10 +42,17 @@ def _extract_pptx_text(path: Path) -> list[dict]:
         if slide.has_notes_slide:
             notes = slide.notes_slide.notes_text_frame.text.strip()
 
+        if title is None and body:
+            # No title placeholder: use the first text line as the title
+            first, _, rest = "\n".join(body).partition("\n")
+            title, body_text = first.strip() or None, rest
+        else:
+            body_text = "\n".join(body)
+
         slides.append({
             "slide_number": number,
             "title": title,
-            "body_text": "\n".join(body),
+            "body_text": body_text,
             "speaker_notes": notes,
         })
     return slides
