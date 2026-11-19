@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import AnalysisStatePanel from "../components/AnalysisStatePanel.jsx";
+import RetryAnalysisButton from "../components/RetryAnalysisButton.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import { errorMessage, getMeeting } from "../services/api.js";
 import { POLL_MS, isAnalyzed } from "../utils/analysisState.js";
@@ -108,7 +109,12 @@ export default function MeetingDetailPage() {
           </Link>
         </section>
       ) : (
-        <AnalysisStatePanel status={meeting.status} />
+        <AnalysisStatePanel status={meeting.status}>
+          {meeting.status === "failed" && (
+            <RetryAnalysisButton meetingId={meetingId}
+              onStarted={(status) => setMeeting((m) => ({ ...m, status }))} />
+          )}
+        </AnalysisStatePanel>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 """Meeting and file upload endpoints."""
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -9,9 +9,10 @@ from app.analysis_schemas import MeetingAnalysis
 from app.database import get_db
 from app.models import Meeting, MeetingFile
 from app.schemas import (
-    MeetingCreate, MeetingDetail, MeetingFileOut, MeetingOut, MeetingStatusUpdate, UploadResult,
+    AnalyzeAccepted, MeetingCreate, MeetingDetail, MeetingFileOut, MeetingOut, MeetingStatusUpdate,
+    UploadResult,
 )
-from app.services import analysis, storage
+from app.services import analysis, analysis_runner, storage
 
 logger = logging.getLogger("meetingiq.api")
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
@@ -61,6 +62,22 @@ _NOT_READY = {
     "processing": "This meeting is still being analyzed.",
     "failed": "The analysis of this meeting failed.",
 }
+
+
+@router.post("/{meeting_id}/analyze", response_model=AnalyzeAccepted, status_code=status.HTTP_202_ACCEPTED)
+def start_analysis(meeting_id: str, background: BackgroundTasks, db: Session = Depends(get_db)):
+    """Start (or retry) the analysis. Same contract as feature/phase-2-llms's
+    routers/analysis.py, which runs the real pipeline; drop this copy when merging."""
+    meeting = _get_meeting_or_404(db, meeting_id)
+    if meeting.status == "processing":
+        raise HTTPException(status.HTTP_409_CONFLICT, "This meeting is already being analyzed.")
+    if not meeting.files:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Upload at least one file before analyzing.")
+    meeting.status = "processing"
+    db.commit()
+    background.add_task(analysis_runner.run_analysis, meeting_id)
+    logger.info("Analysis started for meeting %s", meeting_id)
+    return AnalyzeAccepted(meeting_id=meeting_id, status="processing")
 
 
 @router.put("/{meeting_id}/status", response_model=MeetingOut)

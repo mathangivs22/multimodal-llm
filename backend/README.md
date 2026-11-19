@@ -68,6 +68,7 @@ Error checks: uploading a `.txt` returns 415, an unknown meeting ID returns 404,
 | POST | /api/meetings/{id}/files | Upload one or more files |
 | GET | /api/meetings/{id}/analysis | Analysis result (only when status is `completed`, otherwise 409) |
 | PUT | /api/meetings/{id}/status | Set the analysis status (used by the pipeline) |
+| POST | /api/meetings/{id}/analyze | Start or retry the analysis (202; 409 if already running, 400 without files) |
 
 ## Limits
 
@@ -90,6 +91,12 @@ The pipeline sets the status with:
 ```powershell
 curl.exe -X PUT http://localhost:8000/api/meetings/MEETING_ID/status -H "Content-Type: application/json" -d '{\"status\": \"completed\"}'
 ```
+
+### Retrying a failed analysis
+
+Failed meetings show a **Retry analysis** button on the meeting and results pages. It calls `POST /api/meetings/{id}/analyze`, which sets the meeting to `processing` and starts the analysis in the background; the pages then poll until it finishes.
+
+This branch has no analysis pipeline, so `app/services/analysis_runner.py` is a placeholder: it marks the meeting `completed` if result files exist in its storage folder and `failed` otherwise. The endpoint has the same contract as the one on `feature/phase-2-llms`; when the branches are merged, keep that branch's endpoint and real `run_analysis`, and delete this endpoint and `analysis_runner.py`.
 
 Write the result files **before** setting `completed`. `processing` and `completed` are refused until the meeting has files. While a meeting is `processing`, the meeting and results pages check every 5 seconds and show the results as soon as it completes.
 

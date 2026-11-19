@@ -51,3 +51,9 @@ export async function getMeetingAnalysis(meetingId) {
   const { data } = await api.get(`/meetings/${meetingId}/analysis`);
   return data;
 }
+
+/** Start (or retry) the analysis. The meeting moves to "processing" right away. */
+export async function startAnalysis(meetingId) {
+  const { data } = await api.post(`/meetings/${meetingId}/analyze`);
+  return data;
+}

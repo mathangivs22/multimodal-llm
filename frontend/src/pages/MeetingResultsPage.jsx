@@ -6,6 +6,7 @@ import { ResultsProvider } from "../components/results/ResultsContext.jsx";
 import SlidesSection from "../components/results/SlidesSection.jsx";
 import TranscriptSection from "../components/results/TranscriptSection.jsx";
 import AnalysisStatePanel from "../components/AnalysisStatePanel.jsx";
+import RetryAnalysisButton from "../components/RetryAnalysisButton.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import { errorMessage, getMeeting, getMeetingAnalysis } from "../services/api.js";
 import { POLL_MS, isAnalyzed } from "../utils/analysisState.js";
@@ -106,9 +107,15 @@ export default function MeetingResultsPage() {
           <StatusBadge status={meeting.status} />
         </header>
         <AnalysisStatePanel status={meeting.status}>
-          <Link to={`/meetings/${meetingId}`} className="btn-secondary analysis-state-action">
-            Back to meeting
-          </Link>
+          <div className="analysis-state-actions">
+            {meeting.status === "failed" && (
+              <RetryAnalysisButton meetingId={meetingId}
+                onStarted={(status) => setMeeting((m) => ({ ...m, status }))} />
+            )}
+            <Link to={`/meetings/${meetingId}`} className="btn-secondary">
+              Back to meeting
+            </Link>
+          </div>
         </AnalysisStatePanel>
       </div>
     );

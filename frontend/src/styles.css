@@ -498,7 +498,6 @@ form { display: flex; flex-direction: column; gap: 20px; }
 .analysis-state-processing { border-color: #ecd894; background: var(--amber-soft); }
 .analysis-state-failed { border-color: #f3c7c2; background: var(--danger-soft); }
 .analysis-state-failed h2 { color: var(--danger); }
-.analysis-state-action { align-self: flex-start; margin-top: 6px; }
 .spinner {
   width: 16px; height: 16px; border-radius: 50%; flex: none;
   border: 2px solid #e3cf8a; border-top-color: var(--amber);
@@ -506,3 +505,7 @@ form { display: flex; flex-direction: column; gap: 20px; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+.analysis-state-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; margin-top: 6px; }
+.analysis-state > .retry { margin-top: 6px; }
+.retry { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.retry .btn-icon { margin-right: 8px; }

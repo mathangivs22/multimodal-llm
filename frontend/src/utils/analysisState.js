@@ -14,7 +14,7 @@ export const ANALYSIS_STATES = {
   },
   failed: {
     title: "Analysis failed",
-    text: "Something went wrong while analyzing this meeting, so there are no results to show.",
+    text: "Something went wrong while analyzing this meeting, so there are no results to show. You can run the analysis again.",
   },
 };
 

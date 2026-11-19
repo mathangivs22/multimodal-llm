@@ -16,6 +16,11 @@ class MeetingCreate(BaseModel):
     description: str | None = Field(None, max_length=5000)
 
 
+class AnalyzeAccepted(BaseModel):
+    meeting_id: str
+    status: str
+
+
 class MeetingStatusUpdate(BaseModel):
     status: Literal["created", "uploaded", "processing", "completed", "failed"]
 
