@@ -39,11 +39,15 @@ src/
                 SettingsPage, NotFoundPage
   services/     api.js (all backend calls), server.js (server address), native.js (app-only behaviour)
   utils/        files.js (upload rules matching the backend), time.js, analysisState.js, usePolling.js,
-                minutesText.js (minutes as plain text for email and copying), conflicts.js, clipboard.js
+                minutesText.js (minutes as plain text for email and copying), conflicts.js, clipboard.js, theme.js
   styles.css    design tokens and all styles, including the print layout
 ```
 
 To build against a backend on another address (for example a hosted API), set `VITE_API_URL` when building: `VITE_API_URL=https://api.example.com npm run build`.
+
+## Dark mode
+
+The app follows the device's dark-mode setting. The **Theme** button in the sidebar (the half-filled circle in the phone top bar) switches between **System**, **Light** and **Dark**, and the choice is remembered on that device. All colours are CSS variables at the top of `styles.css`, with the dark values in the "Dark mode" block at the end; add new colours as variables so they work in both themes. Printing and Save as PDF always use the light colours.
 
 ## Emailing the minutes
 

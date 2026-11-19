@@ -12,6 +12,13 @@
       rel="stylesheet"
     />
     <title>MeetingIQ</title>
+    <script>
+      // Apply a saved Light/Dark choice before the first paint (see src/utils/theme.js)
+      try {
+        var t = localStorage.getItem("meetingiq-theme");
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

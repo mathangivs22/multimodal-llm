@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { isNativeApp } from "../services/server.js";
+import ThemeToggle from "./ThemeToggle.jsx";
 
 function Logo() {
   return (
@@ -32,6 +33,7 @@ export default function Layout() {
             </NavLink>
           )}
         </nav>
+        <ThemeToggle />
         <p className="sidebar-foot">Runs locally. Your recordings never leave this machine.</p>
       </aside>
       <main className="main">
