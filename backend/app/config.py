@@ -34,3 +34,25 @@ MAX_FILE_SIZE = {
 }
 
 CHUNK_SIZE = 1024 * 1024  # stream uploads to disk 1 MB at a time
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: local analysis (Whisper + Ollama + PowerPoint)
+# ---------------------------------------------------------------------------
+
+# Ollama runs locally; the backend must be on the same machine to reach it.
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3-vl:4b")
+# Ollama's default context is small; long transcripts would be silently cut off.
+OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "16384"))
+OLLAMA_TIMEOUT_SEC = int(os.getenv("OLLAMA_TIMEOUT_SEC", "900"))
+
+# faster-whisper model: tiny, base, small, medium, large-v3 ...
+WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
+WHISPER_LANGUAGE = os.getenv("WHISPER_LANGUAGE", "en") or None  # empty = auto-detect
+
+# Set to false to skip the per-slide diagram analysis
+VISION_ENABLED = os.getenv("VISION_ENABLED", "true").lower() == "true"
+
+# Folder for rendered slide images, relative to the storage directory
+SLIDE_IMAGE_DIR = STORAGE_DIR
