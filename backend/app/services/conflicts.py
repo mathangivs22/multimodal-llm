@@ -28,6 +28,24 @@ def _numbers(values, valid: set[int]) -> list[int]:
     return kept
 
 
+def _key(text: str) -> str:
+    """Normalise a statement so the same sentence written twice compares equal."""
+    return " ".join(text.lower().split())
+
+
+def _distinct(positions: list[dict]) -> list[dict]:
+    """Drop positions that repeat an earlier statement, keeping the first one."""
+    seen: set[str] = set()
+    kept = []
+    for p in positions:
+        key = _key(p["statement"])
+        if key in seen:
+            continue
+        seen.add(key)
+        kept.append(p)
+    return kept
+
+
 def detect_conflicts(transcript_lines, slide_rows) -> list[dict] | None:
     """transcript_lines: TranscriptSegment rows. slide_rows: (Slide, SlideData) pairs."""
     if not transcript_lines:
@@ -68,8 +86,9 @@ def detect_conflicts(transcript_lines, slide_rows) -> list[dict] | None:
                 "segment_ids": _numbers(p.get("segment_ids"), valid_seqs),
                 "slide_numbers": _numbers(p.get("slide_numbers"), valid_slides),
             })
+        positions = _distinct(positions)
         if not title or len(positions) < 2:
-            logger.info("Dropped conflict %r: needs a title and two positions", title)
+            logger.info("Dropped conflict %r: needs a title and two different positions", title)
             continue
         severity = c.get("severity") if c.get("severity") in SEVERITIES else "low"
         status = c.get("status") if c.get("status") in STATUSES else "unresolved"
