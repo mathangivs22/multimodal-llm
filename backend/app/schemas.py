@@ -156,3 +156,9 @@ class ResultsOut(BaseModel):
 
 # MeetingDetail refers to JobOut, which is defined further down
 MeetingDetail.model_rebuild()
+
+
+class MeetingListItem(MeetingOut):
+    """A row on the meetings page: the meeting plus a summary of its files."""
+    file_count: int = 0
+    file_types: list[str] = []  # distinct types, in the order they were uploaded

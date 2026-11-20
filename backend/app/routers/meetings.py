@@ -9,6 +9,7 @@ from app.analysis_schemas import MeetingAnalysis
 from app.database import get_db
 from app.models import AnalysisJob, Meeting, MeetingFile
 from app.schemas import (
+    MeetingListItem,
     JobOut, MeetingCreate, MeetingDetail, MeetingFileOut, MeetingOut, MeetingStatusUpdate, UploadResult,
 )
 from app.services import analysis, storage
@@ -34,9 +35,28 @@ def create_meeting(payload: MeetingCreate, db: Session = Depends(get_db)):
     return meeting
 
 
-@router.get("", response_model=list[MeetingOut])
+@router.get("", response_model=list[MeetingListItem])
 def list_meetings(db: Session = Depends(get_db)):
-    return db.scalars(select(Meeting).order_by(Meeting.created_at.desc())).all()
+    meetings = db.scalars(select(Meeting).order_by(Meeting.created_at.desc())).all()
+    files = db.execute(
+        select(MeetingFile.meeting_id, MeetingFile.file_type).order_by(MeetingFile.uploaded_at)
+    ).all()
+    types_by_meeting: dict[str, list[str]] = {}
+    for meeting_id, file_type in files:
+        types = types_by_meeting.setdefault(meeting_id, [])
+        if file_type not in types:
+            types.append(file_type)
+    count_by_meeting: dict[str, int] = {}
+    for meeting_id, _ in files:
+        count_by_meeting[meeting_id] = count_by_meeting.get(meeting_id, 0) + 1
+    return [
+        MeetingListItem(
+            **MeetingOut.model_validate(m).model_dump(),
+            file_count=count_by_meeting.get(m.id, 0),
+            file_types=types_by_meeting.get(m.id, []),
+        )
+        for m in meetings
+    ]
 
 
 @router.get("/{meeting_id}", response_model=MeetingDetail)

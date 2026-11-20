@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Highlight from "../components/Highlight.jsx";
 import StatusBadge, { STATUS_LABELS } from "../components/StatusBadge.jsx";
-import { errorMessage, listMeetings } from "../services/api.js";
+import { deleteMeeting, errorMessage, listMeetings } from "../services/api.js";
 import { formatDate } from "../utils/files.js";
 import { meetingMatches, searchTerms } from "../utils/search.js";
 
@@ -13,6 +13,25 @@ const CHIP_LABELS = { ...STATUS_LABELS, uploaded: "Ready", failed: "Failed" };
 export default function MeetingsPage() {
   const [meetings, setMeetings] = useState(null);
   const [error, setError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
+
+  async function handleDelete(meeting) {
+    const ok = window.confirm(
+      `Delete "${meeting.title}"? Its files, transcript, slides and minutes will be removed. This can't be undone.`,
+    );
+    if (!ok) return;
+    setDeletingId(meeting.id);
+    setDeleteError(null);
+    try {
+      await deleteMeeting(meeting.id);
+      setMeetings((list) => list.filter((m) => m.id !== meeting.id));
+    } catch (err) {
+      setDeleteError(errorMessage(err));
+    } finally {
+      setDeletingId(null);
+    }
+  }
   // The search lives in the address (?q=…&status=…), so Back from a meeting keeps it
   const [params, setParams] = useSearchParams();
   const query = params.get("q") ?? "";
@@ -80,6 +99,12 @@ export default function MeetingsPage() {
           New meeting
         </Link>
       </header>
+
+      {deleteError && (
+        <div className="notice notice-error" role="alert">
+          <p>{deleteError}</p>
+        </div>
+      )}
 
       {error && (
         <div className="notice notice-error" role="alert">
@@ -159,17 +184,28 @@ export default function MeetingsPage() {
           ) : (
             <ul className="meeting-list">
               {visible.map((m) => (
-                <li key={m.id}>
+                <li key={m.id} className="meeting-item">
                   <Link to={`/meetings/${m.id}`} className="meeting-row">
                     <div className="meeting-row-main">
                       <span className="meeting-title"><Highlight text={m.title} terms={terms} /></span>
                       {m.description && (
                         <span className="meeting-desc"><Highlight text={m.description} terms={terms} /></span>
                       )}
+                      <span className="meeting-files">{fileSummary(m)}</span>
                     </div>
                     <span className="meeting-date">{formatDate(m.created_at)}</span>
                     <StatusBadge status={m.status} />
                   </Link>
+                  <button
+                    type="button"
+                    className="meeting-delete"
+                    onClick={() => handleDelete(m)}
+                    disabled={m.status === "processing" || deletingId === m.id}
+                    aria-label={`Delete ${m.title}`}
+                    title={m.status === "processing" ? "Wait for the analysis to finish" : "Delete meeting"}
+                  >
+                    {deletingId === m.id ? "…" : "Delete"}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -178,6 +214,16 @@ export default function MeetingsPage() {
       )}
     </div>
   );
+}
+
+const FILE_TYPE_NAMES = { audio: "Audio", video: "Video", presentation: "Slides" };
+
+/** "2 files · Audio, Slides" for a meeting row; empty when nothing was uploaded yet. */
+function fileSummary(m) {
+  if (!m.file_count) return "No files yet";
+  const noun = m.file_count === 1 ? "file" : "files";
+  const types = (m.file_types ?? []).map((t) => FILE_TYPE_NAMES[t] ?? t).join(", ");
+  return `${m.file_count} ${noun}${types ? ` · ${types}` : ""}`;
 }
 
 function SearchIcon() {
