@@ -3,6 +3,7 @@
 Returns None when the check can't run (no transcript), and a list (possibly empty) when it ran.
 """
 import logging
+import re
 
 from app.config import MINUTES_MODEL
 from app.services.llm import chat_json_with_retry
@@ -65,6 +66,7 @@ def detect_conflicts(transcript_lines, slide_rows) -> list[dict] | None:
         raise ValueError("The conflicts reply has no 'conflicts' list.")
 
     valid_seqs = {s.seq for s in transcript_lines}
+    spoken_text = " ".join(s.text for s in transcript_lines).lower()
     valid_slides = {row.slide_number for row, _ in slide_rows}
     found: list[dict] = []
     for c in raw_list:
@@ -80,6 +82,9 @@ def detect_conflicts(transcript_lines, slide_rows) -> list[dict] | None:
             if not isinstance(p, dict) or not str(p.get("statement") or "").strip():
                 continue
             speaker = str(p.get("speaker") or "").strip() or None
+            # Only keep a speaker the transcript really names; "[1]" and unknown names become unidentified
+            if speaker and (re.fullmatch(r"\[\s*\d+\s*\]", speaker) or speaker.lower() not in spoken_text):
+                speaker = None
             positions.append({
                 "speaker": speaker,
                 "statement": str(p["statement"]).strip(),

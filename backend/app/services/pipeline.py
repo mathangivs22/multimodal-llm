@@ -10,6 +10,7 @@ CHANGED ON feature/analysis (merging feature/phase-2-llms):
 """
 import json
 import logging
+import re
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -59,6 +60,21 @@ def _parse_date(text: str | None) -> date | None:
         except ValueError:
             continue
     return None  # e.g. "November 20" has no year: keep only the text
+
+
+PLACEHOLDER = re.compile(r"\[\s*\d+\s*\]")
+
+
+def _clean_names(values, spoken_text: str) -> list[str]:
+    """Keep names that the transcript really contains; drop transcript numbers like "[1]"."""
+    names: list[str] = []
+    for v in values if isinstance(values, list) else []:
+        name = str(v).strip()
+        if not name or PLACEHOLDER.fullmatch(name) or name.lower() not in spoken_text:
+            continue
+        if name not in names:
+            names.append(name)
+    return names
 
 
 def _as_list(value) -> list:
@@ -192,6 +208,9 @@ def run_analysis(meeting_id: str) -> None:
 
         line_text = {s.seq: s.text.lower() for s in transcript_lines}
         valid_seqs = set(line_text)
+        spoken_text = " ".join(s.text for s in transcript_lines).lower()
+        if isinstance(overview, dict):
+            overview["participants"] = _clean_names(overview.get("participants"), spoken_text)
         overview = minutes.get("meeting_overview") if isinstance(minutes.get("meeting_overview"), dict) else {}
         discussion = [str(x) for x in _as_list(minutes.get("discussion_summary"))]
 
