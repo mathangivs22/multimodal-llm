@@ -140,9 +140,15 @@ export default function MeetingDetailPage() {
             <h2>Analysis</h2>
             <p className="muted">The minutes and the conflicts found in the discussion are ready.</p>
           </div>
-          <Link to="results" className="btn-primary">
-            View results
-          </Link>
+          <div className="analysis-actions">
+            <RetryAnalysisButton
+              label="Analyze again"
+              meetingId={meetingId}
+              onStarted={(status) => setMeeting((m) => ({ ...m, status }))} />
+            <Link to="results" className="btn-primary">
+              View results
+            </Link>
+          </div>
         </section>
       ) : (
         <AnalysisStatePanel status={meeting.status} job={meeting.latest_job}>

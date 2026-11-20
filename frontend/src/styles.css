@@ -740,3 +740,6 @@ mark { background: var(--mark-bg); color: var(--mark-text); border-radius: 2px; 
 .meeting-item-uploaded { border-left-color: var(--mint); }
 .meeting-item-failed { border-left-color: var(--danger); }
 .meeting-item:hover { background: var(--hover); }
+
+/* Analyzed meeting: re-run and view results side by side */
+.analysis-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
