@@ -15,7 +15,7 @@ Return JSON only, with exactly this structure:
 
 Rules:
 1. Use only facts stated in the transcript or slides. Do not add anything else.
-2. Attribution: a suggestion, opinion or agreement belongs to a person only if that person's own words say it. "Carol recommended X" is valid only if Carol said it. Never swap speakers.
+2. Attribution: write a discussion point with a name only when the transcript line that supports it starts with that person's name, or that person speaks it. Quote the line in your head before you write the name. If you can't tell who said it, write the point without a name. Never swap speakers, and never credit a request, question or the meeting host with a suggestion they didn't make.
 3. "finalized" only when someone clearly agrees or decides, for example "let's go with", "we agreed", "approved". Use "suggested" for "I suggest", "might be better", "proposal", or anything a team member has not confirmed.
 4. Action items: the owner is the person who says "I'll ..." or accepts the task. The deadline is copied exactly as spoken, for example "November 20". If no owner or deadline is stated, use an empty string.
 5. Each transcript line starts with a number in [brackets]. Put that number in source_seq for the decision or action item it comes from. Use 0 if there is no clear source.
@@ -94,7 +94,7 @@ CONFLICTS_PROMPT = """You check a meeting for conflicts. Return JSON only, in ex
 ]}}
 
 Rules:
-1. Report only real conflicts: two people disagree, or something said contradicts a slide (numbers, dates, names, scope or a decision). Do not report opinions that everyone accepted, or topics nobody discussed.
+1. Report only real conflicts. A conflict needs two positions that contradict each other: one person says X and another says not X, or something said contradicts a slide. A question, a request ("can you set up the database?"), an agreement, or a plan is NOT a position. Do not report opinions that everyone accepted, or topics nobody discussed.
 2. "speaker_disagreement": each position is one person's words. Use only the transcript.
 3. "speech_vs_slide": one position is a slide (its number in slide_numbers, speaker null) and the other is what was said (segment_ids). Only report this kind when slides are provided.
 4. Each transcript line starts with a number in [brackets]. Use those numbers in segment_ids. Slide numbers are shown as "Slide N".
