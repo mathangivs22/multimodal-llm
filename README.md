@@ -90,7 +90,7 @@ Results are saved in the database, and the results page reads them from there. F
 
 ## Status
 
-- **Done:** meeting upload, status tracking, results page (minutes and conflicts), retry for failed analyses, sharing the results (print/PDF, email through your own email app, copy as text), meetings search with status filters, dark mode, Android/iOS app projects.
+- **Done:** meeting upload, status tracking, results page (minutes and conflicts), retry for failed analyses, sharing the results (print/PDF, email through your own email app, copy as text), meetings search with status filters, an Action items page across meetings (tick as done, add deadlines to a calendar), dark mode, Android/iOS app projects.
 - **Analysis pipeline:** merged from `feature/phase-2-llms`. The results page reads its database results, shows which decisions are only suggested, and shows the current step or why an analysis failed.
 - **Not yet built:** speaker identification, conflict detection in the pipeline (the output format and the database tables exist), push notifications in the mobile app (needs a Firebase project), and running the native apps on a device.
 

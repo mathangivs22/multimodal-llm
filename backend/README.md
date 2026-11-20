@@ -76,10 +76,20 @@ Error checks: uploading a `.txt` returns 415, an unknown meeting ID returns 404,
 | GET | /api/meetings/{id}/results | The pipeline's raw results from the database |
 | GET | /api/meetings/{id}/slides/{slide_id}/image | A rendered slide image |
 | PUT | /api/meetings/{id}/status | **Testing only**: set a meeting's status by hand (see below) |
+| GET | /api/action-items?status=open\|done\|all&owner= | Action items of every completed meeting, soonest deadline first |
+| PATCH | /api/action-items/{id} | Tick an action item as done or open again: `{"status": "done"}` |
 
 ## Limits
 
 Audio (.mp3 .wav .m4a .ogg .flac) 200 MB; video (.mp4 .mov .mkv .webm) 1 GB; presentations (.pptx .pdf) 100 MB. Change these in `app/config.py`.
+
+## Action items across meetings
+
+`routers/action_items.py` lists the action items of all **completed** meetings (with each meeting's title and when the cited transcript line was said) and ticks them. It uses the existing `action_items` table, with no schema changes. Ticking is refused (409) while the meeting is being analyzed, and an unknown id gives 404.
+
+- **Ticks survive re-analysis**: before a run clears the old results, the pipeline remembers which tasks were done and marks the same task (matched by its text, ignoring case and punctuation) done again.
+- **Deadlines without a year** ("November 20", "Nov 20th") get the next such date on or after the day the meeting was created, so they can go into a calendar. Relative ones ("next Friday") stay text only (`deadline_text`).
+- Meetings whose results come from JSON files have no rows in `action_items`, so they don't appear and can't be ticked.
 
 ## Analysis pipeline
 

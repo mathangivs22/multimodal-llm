@@ -746,3 +746,63 @@ mark { background: var(--mark-bg); color: var(--mark-text); border-radius: 2px; 
 /* Keep Analyze again and View results on one line inside the analyzed panel */
 .analysis-ready > .analysis-actions { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 12px; }
 .analysis-ready > .analysis-actions .retry { flex-direction: row; }
+
+/* ---------- Action items (page, checkbox, calendar button) ---------- */
+.ai-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.ai-owner { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; color: var(--muted); }
+.ai-owner select {
+  background: var(--surface); color: var(--text); border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm); padding: 6px 10px; font: inherit;
+}
+.ai-owner select:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
+.ai-group { display: flex; flex-direction: column; gap: 8px; }
+.ai-group h2 {
+  display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+}
+.ai-group-overdue h2 { color: var(--danger); }
+.ai-list { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.ai-list li + li { border-top: 1px solid var(--line); }
+.ai-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 150px 130px 36px; align-items: center; gap: 14px; padding: 12px 16px; }
+.ai-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ai-task { font-weight: 600; }
+.ai-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 0.8125rem; color: var(--muted); }
+.ai-meta a { color: var(--teal-dark); font-weight: 500; text-decoration: none; }
+.ai-meta a:hover { text-decoration: underline; text-underline-offset: 2px; }
+.ai-source { padding: 1px 7px; font-size: 0.75rem; }
+.ai-owner-inline { display: none; }
+.ai-owner-cell { font-size: 0.9375rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-due { font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.ai-late { color: var(--danger); font-weight: 600; }
+.ai-done .ai-task { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line-strong); }
+
+.action-check-wrap { position: relative; display: inline-flex; }
+.action-check { width: 20px; height: 20px; margin: 0; accent-color: var(--teal); cursor: pointer; }
+.action-check:disabled { cursor: progress; }
+.action-check-error {
+  position: absolute; left: 0; top: 26px; z-index: 5; width: 240px; padding: 6px 9px; border-radius: var(--radius-sm);
+  background: var(--danger-soft); color: var(--danger-text); border: 1px solid var(--danger-line); font-size: 0.8125rem;
+}
+.calendar-btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+  border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface); color: var(--text); cursor: pointer;
+}
+.calendar-btn:hover:not(:disabled) { border-color: var(--teal); color: var(--teal-dark); }
+.calendar-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.calendar-btn svg { width: 17px; height: 17px; }
+.col-check { width: 36px; }
+.col-cal { width: 44px; text-align: right; }
+
+@media (max-width: 800px) {
+  .ai-row { grid-template-columns: 28px minmax(0, 1fr) 36px; grid-template-areas: "check main cal" "check due cal"; row-gap: 4px; }
+  .ai-row > .action-check-wrap { grid-area: check; align-self: start; padding-top: 2px; }
+  .ai-main { grid-area: main; }
+  .ai-due { grid-area: due; font-size: 0.8125rem; }
+  .ai-row > .calendar-btn { grid-area: cal; }
+  .ai-owner-cell { display: none; }
+  .ai-owner-inline { display: inline; }
+  .ai-owner-inline::before { content: "· "; }
+  /* Four links and the theme button share the phone top bar: keep the labels, drop the icons */
+  .nav-link { font-size: 0.875rem; padding: 8px 6px; }
+  .nav-icon { display: none; }
+}

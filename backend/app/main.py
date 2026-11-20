@@ -1,4 +1,7 @@
-"""MeetingIQ FastAPI application entry point."""
+"""MeetingIQ FastAPI application entry point.
+
+CHANGED ON feature/ui-action-item: registers routers/action_items.py.
+"""
 import logging
 from contextlib import asynccontextmanager
 
@@ -7,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import CORS_ORIGINS, STORAGE_DIR
 from app.database import init_db
-from app.routers import analysis, meetings
+from app.routers import action_items, analysis, meetings
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -36,6 +39,7 @@ app.add_middleware(
 
 app.include_router(meetings.router)
 app.include_router(analysis.router)
+app.include_router(action_items.router)
 
 
 @app.get("/api/health", tags=["system"])

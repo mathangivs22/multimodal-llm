@@ -27,6 +27,9 @@ export default function Layout() {
           <NavLink to="/meetings/new" className="nav-link">
             <span className="nav-icon" aria-hidden="true">➕</span> New meeting
           </NavLink>
+          <NavLink to="/action-items" className="nav-link">
+            <span className="nav-icon" aria-hidden="true">✅</span> Action items
+          </NavLink>
           {isNativeApp && (
             <NavLink to="/settings" className="nav-link">
               <span className="nav-icon" aria-hidden="true">⚙️</span> Settings

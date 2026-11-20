@@ -61,6 +61,7 @@ class ActionItem(BaseModel):
     due_date: date | None = None
     due_text: str | None = Field(None, description="Deadline as spoken, when it isn't a calendar date")
     status: Literal["open", "done"] = "open"
+    can_update: bool = Field(False, description="True when id is a database id that PATCH /api/action-items/{id} accepts")
     evidence: list[EvidenceRef] = []
 
 

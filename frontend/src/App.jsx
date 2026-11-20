@@ -4,6 +4,7 @@ import MeetingsPage from "./pages/MeetingsPage.jsx";
 import UploadMeetingPage from "./pages/UploadMeetingPage.jsx";
 import MeetingDetailPage from "./pages/MeetingDetailPage.jsx";
 import MeetingResultsPage from "./pages/MeetingResultsPage.jsx";
+import ActionItemsPage from "./pages/ActionItemsPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import { needsServerUrl } from "./services/server.js";
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="meetings/new" element={<UploadMeetingPage />} />
         <Route path="meetings/:meetingId" element={<MeetingDetailPage />} />
         <Route path="meetings/:meetingId/results" element={<MeetingResultsPage />} />
+        <Route path="action-items" element={<ActionItemsPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

@@ -7,7 +7,7 @@ function byId(list) {
 }
 
 /** Lookups shared by the results sections: people, transcript lines and slides by id. */
-export function ResultsProvider({ analysis, children }) {
+export function ResultsProvider({ analysis, onActionStatus, children }) {
   const value = useMemo(() => ({
     analysis,
     people: byId(analysis.participants),
@@ -15,7 +15,9 @@ export function ResultsProvider({ analysis, children }) {
     segments: byId(analysis.transcript),
     slides: byId(analysis.slides),
     missing: new Set(analysis.missing ?? []),
-  }), [analysis]);
+    // Called with (actionItemId, "open" | "done") when an action item is ticked
+    onActionStatus: onActionStatus ?? (() => {}),
+  }), [analysis, onActionStatus]);
 
   return <ResultsContext.Provider value={value}>{children}</ResultsContext.Provider>;
 }

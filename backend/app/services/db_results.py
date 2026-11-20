@@ -127,7 +127,8 @@ def build_analysis_from_db(db: Session, meeting: Meeting) -> MeetingAnalysis:
         if d.text and d.text.strip()]
 
     action_items = [{
-        "id": f"a{i}",
+        "id": a.id,  # the database id, so the results page can tick it (PATCH /api/action-items/{id})
+        "can_update": True,
         "task": a.task.strip(),
         "owner_id": people.id_for(a.owner),
         "due_date": a.deadline_date,

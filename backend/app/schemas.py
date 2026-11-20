@@ -4,6 +4,10 @@ CHANGED ON feature/analysis (merging feature/phase-2-llms):
 - Removed feature/analysis's own AnalyzeAccepted (the one below, from phase 2, is kept).
 - MeetingDetail.latest_job: the newest analysis job, so the meeting and results pages can
   show the current step and why an analysis failed. Filled in by GET /api/meetings/{id}.
+
+CHANGED ON feature/ui-action-item:
+- ActionItemListItem / ActionItemUpdate for GET /api/action-items and
+  PATCH /api/action-items/{id} (routers/action_items.py).
 """
 from datetime import datetime, timezone
 from typing import Annotated, Literal
@@ -152,6 +156,25 @@ class ResultsOut(BaseModel):
     minutes: MinutesOut | None
     decisions: list[DecisionOut]
     action_items: list[ActionItemOut]
+
+
+class ActionItemListItem(BaseModel):
+    """An action item with the meeting it came from, for the Action items page."""
+    id: str
+    task: str
+    owner: str | None
+    deadline_text: str | None   # as spoken, e.g. "next Friday"
+    deadline_date: date | None  # null when the deadline isn't a calendar date
+    status: Literal["open", "done"]
+    source_seq: int | None
+    source_start_sec: float | None  # when the cited transcript line was said
+    meeting_id: str
+    meeting_title: str
+    meeting_created_at: UTCDateTime
+
+
+class ActionItemUpdate(BaseModel):
+    status: Literal["open", "done"]
 
 
 # MeetingDetail refers to JobOut, which is defined further down

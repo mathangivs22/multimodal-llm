@@ -22,6 +22,7 @@ Open http://localhost:5173
 | `/meetings/new` | Upload page: title, description, recording, slides |
 | `/meetings/:id` | Meeting details, uploaded files and analysis status (View results / Retry analysis) |
 | `/meetings/:id/results` | Results: minutes of the meeting, then conflicts. Only for completed meetings. Email minutes, Copy as text, Print or save as PDF |
+| `/action-items` | Action items from every analyzed meeting: tick as done, filter by owner, add to a calendar |
 | `/settings` | Server address (mobile app only) |
 
 While a meeting is being analyzed, the meeting and results pages re-check its status every 5 seconds.
@@ -44,6 +45,12 @@ src/
 ```
 
 To build against a backend on another address (for example a hosted API), set `VITE_API_URL` when building: `VITE_API_URL=https://api.example.com npm run build`.
+
+## Action items and calendars
+
+The **Action items** page lists the action items of every analyzed meeting, grouped as Overdue, Next 7 days, Later and No date, with Open / Done / All and owner filters. Ticking an item saves it (`PATCH /api/action-items/{id}`); it stays in place, struck through, until the filter changes, so a mis-tick can be undone. The results page's action items table has the same checkbox for meetings whose results come from the database.
+
+**Add to calendar** downloads an `.ics` file (`src/utils/ics.js`): one all-day event per item on its due date, which Google Calendar, Outlook and Apple Calendar can import. Each event's UID is the action item's id, so importing again updates it. Items without an exact date can't be exported, and the button explains why. The calendar buttons are hidden in the phone app, where web views can't download files.
 
 ## Searching meetings
 

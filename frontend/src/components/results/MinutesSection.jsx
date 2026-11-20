@@ -1,9 +1,11 @@
 import { formatDay, formatRange } from "../../utils/time.js";
+import { ActionCheckbox, CalendarButton, resultsUrl } from "../ActionItemControls.jsx";
 import { EvidenceList, Speaker, firstName } from "./Evidence.jsx";
 import { useResults } from "./ResultsContext.jsx";
 
 export default function MinutesSection() {
-  const { analysis, people, missing } = useResults();
+  const { analysis, people, missing, onActionStatus } = useResults();
+  const canTick = actionsCanUpdate(analysis.action_items);
   const { summary, participants, topics, decisions, action_items: actions } = analysis;
 
   if (missing.has("minutes")) {
@@ -105,15 +107,25 @@ export default function MinutesSection() {
           <table className="data-table actions-table">
             <thead>
               <tr>
+                {canTick && <th scope="col" className="col-check"><span className="visually-hidden">Done</span></th>}
                 <th scope="col">Task</th>
                 <th scope="col">Owner</th>
                 <th scope="col">Due</th>
                 <th scope="col" className="col-source">Source</th>
+                <th scope="col" className="col-cal"><span className="visually-hidden">Calendar</span></th>
               </tr>
             </thead>
             <tbody>
               {actions.map((a) => (
                 <tr key={a.id} className={a.status === "done" ? "action-done" : undefined}>
+                  {canTick && (
+                    <td className="col-check">
+                      {a.can_update && (
+                        <ActionCheckbox itemId={a.id} task={a.task} status={a.status}
+                          onChange={(s) => onActionStatus(a.id, s)} />
+                      )}
+                    </td>
+                  )}
                   <td className="action-task">
                     {a.task}
                     {a.status === "done" && <span className="tag tag-resolved">Done</span>}
@@ -124,6 +136,13 @@ export default function MinutesSection() {
                   </td>
                   <td className="col-source">
                     <EvidenceList evidence={a.evidence} label="" />
+                  </td>
+                  <td className="col-cal">
+                    <CalendarButton item={{
+                      id: a.id, task: a.task, dueDate: a.due_date,
+                      owner: (a.owner_id && people[a.owner_id]?.name) || null,
+                      meetingTitle: analysis.title, url: resultsUrl(analysis.meeting_id),
+                    }} />
                   </td>
                 </tr>
               ))}
@@ -162,6 +181,11 @@ function SuggestedIcon() {
       <circle cx="10" cy="10" r="8.25" fill="none" strokeWidth="1.5" strokeDasharray="3 2.4" />
     </svg>
   );
+}
+
+/** Only results read from the database can be ticked (JSON-file results have no saved ids). */
+function actionsCanUpdate(items) {
+  return items.some((a) => a.can_update);
 }
 
 function CheckIcon() {

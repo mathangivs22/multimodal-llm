@@ -7,6 +7,13 @@ CHANGED ON feature/analysis (merging feature/phase-2-llms):
 - _clear_previous_results() also deletes the meeting's conflict results
   (ConflictCheck, Conflict; positions go with their conflict), so a re-run never
   shows conflicts from an earlier run. Nothing else in this file was changed.
+
+CHANGED ON feature/ui-action-item:
+- Action items ticked as done keep their 'done' status when the meeting is analyzed
+  again, if the same task comes back (matched by its text: _done_task_keys / _task_key).
+- _parse_date() also reads deadlines without a year ("November 20", "Nov 20th"): they get
+  the next such date on or after the day the meeting was created, so they can go into a
+  calendar. Relative dates ("next Friday") are still left as text only.
 """
 import json
 import logging
@@ -50,16 +57,55 @@ def _clock(seconds: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
 
 
-def _parse_date(text: str | None) -> date | None:
+DATE_FORMATS_NO_YEAR = ("%B %d", "%b %d")
+ORDINAL = re.compile(r"(\d{1,2})(st|nd|rd|th)\b", re.IGNORECASE)
+
+
+def _parse_date(text: str | None, reference: date | None = None) -> date | None:
+    """Read a spoken deadline as a calendar date, or None when it isn't one.
+
+    "November 20, 2026" and "2026-11-20" are read as written. "November 20" (no year) is
+    the next November 20 on or after `reference` (the meeting's date), if one is given.
+    Anything else ("next Friday", "end of the sprint") stays text only.
+    """
     if not text:
         return None
-    cleaned = text.strip().rstrip(".")
+    cleaned = ORDINAL.sub(r"\1", text.strip().rstrip("."))
     for fmt in DATE_FORMATS:
         try:
             return datetime.strptime(cleaned, fmt).date()
         except ValueError:
             continue
-    return None  # e.g. "November 20" has no year: keep only the text
+    if reference is None:
+        return None
+    for fmt in DATE_FORMATS_NO_YEAR:
+        try:
+            # Parse with a placeholder leap year: strptime without a year is deprecated,
+            # and a leap year keeps February 29 readable
+            parsed = datetime.strptime(f"{cleaned} 2000", f"{fmt} %Y")
+        except ValueError:
+            continue
+        for year in (reference.year, reference.year + 1):
+            try:
+                candidate = date(year, parsed.month, parsed.day)
+            except ValueError:  # February 29 in a non-leap year
+                continue
+            if candidate >= reference:
+                return candidate
+    return None
+
+
+def _task_key(task: str) -> str:
+    """Compare tasks ignoring case, punctuation and spacing."""
+    return " ".join(re.sub(r"[^\w\s]", " ", task.lower()).split())
+
+
+def _done_task_keys(db, meeting_id: str) -> set[str]:
+    """Tasks already ticked as done for this meeting, read before a re-run clears them."""
+    rows = db.query(ActionItem.task).filter(
+        ActionItem.meeting_id == meeting_id, ActionItem.status == "done"
+    ).all()
+    return {_task_key(task) for (task,) in rows}
 
 
 PLACEHOLDER = re.compile(r"\[\s*\d+\s*\]")
@@ -115,6 +161,7 @@ def run_analysis(meeting_id: str) -> None:
 
         files = db.query(MeetingFile).filter(MeetingFile.meeting_id == meeting_id) \
             .order_by(MeetingFile.uploaded_at).all()
+        done_tasks = _done_task_keys(db, meeting_id)  # kept across re-runs
         _clear_previous_results(db, meeting_id)
 
         # 1. Transcription -------------------------------------------------
@@ -252,8 +299,8 @@ def run_analysis(meeting_id: str) -> None:
                 task=str(item["task"]),
                 owner=owner,
                 deadline_text=deadline[:200] if deadline else None,
-                deadline_date=_parse_date(deadline),
-                status="open",
+                deadline_date=_parse_date(deadline, reference=meeting.created_at.date()),
+                status="done" if _task_key(str(item["task"])) in done_tasks else "open",
                 source_seq=seq,
             ))
 

@@ -76,3 +76,15 @@ export async function checkServer(serverUrl) {
 export async function deleteMeeting(meetingId) {
   await api.delete(`/meetings/${meetingId}`);
 }
+
+/** Action items of every analyzed meeting. status: "open" | "done" | "all". */
+export async function listActionItems({ status = "all" } = {}) {
+  const { data } = await api.get("/action-items", { params: { status } });
+  return data;
+}
+
+/** Tick an action item as done ("done") or untick it ("open"). Returns the updated item. */
+export async function updateActionItem(itemId, status) {
+  const { data } = await api.patch(`/action-items/${itemId}`, { status });
+  return data;
+}

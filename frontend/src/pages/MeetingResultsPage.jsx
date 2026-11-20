@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import ConflictsSection from "../components/results/ConflictsSection.jsx";
 import MinutesSection from "../components/results/MinutesSection.jsx";
@@ -46,6 +46,11 @@ export default function MeetingResultsPage() {
       cancelled = true;
     };
   }, [meetingId, analyzed]);
+
+  // Ticking an action item updates the page at once (the checkbox saves it)
+  const setActionStatus = useCallback((id, status) => {
+    setAnalysis((a) => a && { ...a, action_items: a.action_items.map((it) => (it.id === id ? { ...it, status } : it)) });
+  }, []);
 
   usePolling(
     () => getMeeting(meetingId).then(setMeeting).catch(() => {}),
@@ -100,7 +105,7 @@ export default function MeetingResultsPage() {
   const conflictsChecked = !(analysis.missing ?? []).includes("conflicts");
 
   return (
-    <ResultsProvider analysis={analysis}>
+    <ResultsProvider analysis={analysis} onActionStatus={setActionStatus}>
       <div className="page results-page">
         <Link to={`/meetings/${meetingId}`} className="back-link no-print">
           Meeting details
