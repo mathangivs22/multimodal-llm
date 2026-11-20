@@ -260,7 +260,10 @@ def run_analysis(meeting_id: str) -> None:
         # 4b. Conflicts (optional: a failure here does not fail the analysis) ---
         _set_stage(db, job, "checking conflicts")
         try:
-            found = detect_conflicts(transcript_lines, slide_rows)
+            found = detect_conflicts(
+                transcript_lines, slide_rows,
+                attendees=(overview.get("participants") or []) if isinstance(overview, dict) else [],
+            )
         except Exception as exc:
             logger.warning("Conflict check skipped for meeting %s: %s", meeting_id, exc)
             found = None  # no check row is saved, so the page shows "not checked"

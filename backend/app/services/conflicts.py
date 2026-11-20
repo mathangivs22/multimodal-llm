@@ -47,7 +47,19 @@ def _distinct(positions: list[dict]) -> list[dict]:
     return kept
 
 
-def detect_conflicts(transcript_lines, slide_rows) -> list[dict] | None:
+def _speaker_from_line(text: str, attendees: list[str]) -> str | None:
+    """Whisper usually starts a line with the speaker's name ("Bob. I'll finish…")."""
+    match = re.match(r"\s*([A-Za-z][A-Za-z'-]*)[.,:!?]", text or "")
+    if not match:
+        return None
+    word = match.group(1).lower()
+    for name in attendees:
+        if name.lower() == word:
+            return name
+    return None
+
+
+def detect_conflicts(transcript_lines, slide_rows, attendees: list[str] | None = None) -> list[dict] | None:
     """transcript_lines: TranscriptSegment rows. slide_rows: (Slide, SlideData) pairs."""
     if not transcript_lines:
         return None
@@ -85,6 +97,11 @@ def detect_conflicts(transcript_lines, slide_rows) -> list[dict] | None:
             # Only keep a speaker the transcript really names; "[1]" and unknown names become unidentified
             if speaker and (re.fullmatch(r"\[\s*\d+\s*\]", speaker) or speaker.lower() not in spoken_text):
                 speaker = None
+            # No name given: take the speaker from the first transcript line the position cites
+            if speaker is None and attendees:
+                for seq in _numbers(p.get("segment_ids"), valid_seqs)[:1]:
+                    line = next((t.text for t in transcript_lines if t.seq == seq), "")
+                    speaker = _speaker_from_line(line, attendees)
             positions.append({
                 "speaker": speaker,
                 "statement": str(p["statement"]).strip(),
