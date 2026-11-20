@@ -743,3 +743,6 @@ mark { background: var(--mark-bg); color: var(--mark-text); border-radius: 2px; 
 
 /* Analyzed meeting: re-run and view results side by side */
 .analysis-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+/* Keep Analyze again and View results on one line inside the analyzed panel */
+.analysis-ready > .analysis-actions { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 12px; }
+.analysis-ready > .analysis-actions .retry { flex-direction: row; }
