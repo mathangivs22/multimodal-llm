@@ -5,7 +5,7 @@ import { errorMessage, startAnalysis } from "../services/api.js";
  * Starts the analysis again for a failed meeting.
  * onStarted(status) lets the page switch to "processing" straight away; its polling does the rest.
  */
-export default function RetryAnalysisButton({ meetingId, onStarted }) {
+export default function RetryAnalysisButton({ meetingId, onStarted, label = "Retry analysis" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -24,8 +24,8 @@ export default function RetryAnalysisButton({ meetingId, onStarted }) {
   return (
     <div className="retry">
       <button type="button" className="btn-primary" onClick={retry} disabled={busy}>
-        <RetryIcon />
-        {busy ? "Starting…" : "Retry analysis"}
+        {label.startsWith("Retry") && <RetryIcon />}
+        {busy ? "Starting…" : label}
       </button>
       {error && <p className="field-error" role="alert">{error}</p>}
     </div>
