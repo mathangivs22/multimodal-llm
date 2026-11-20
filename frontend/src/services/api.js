@@ -4,7 +4,7 @@ import { getServerUrl, isNativeApp } from "./server.js";
 // The base URL is read on every request, so changing the server in Settings applies at once.
 // Website: same origin, and in development Vite forwards /api to FastAPI (see vite.config.js).
 const api = axios.create({ timeout: 30000 });
-api.interceptors.request.use((config) => ({ ...config, baseURL: `${getServerUrl()}/api` }));
+api.interceptors.request.use((config) => ({ ...config, baseURL: config.baseURL || `${getServerUrl()}/api` }));
 
 /** Turn any axios error into one readable sentence for the UI. */
 export function errorMessage(err) {
@@ -43,6 +43,8 @@ export async function uploadMeetingFiles(meetingId, files, onProgress) {
   const form = new FormData();
   files.forEach((file) => form.append("files", file));
   const { data } = await api.post(`/meetings/${meetingId}/files`, form, {
+    // In development, send big uploads straight to the backend: the dev proxy drops them
+    baseURL: import.meta.env.DEV ? "http://127.0.0.1:8000/api" : undefined,
     timeout: 0, // large recordings can take a while
     onUploadProgress: (e) => {
       if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100));
