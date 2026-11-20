@@ -19,13 +19,14 @@ from app.config import (
 )
 from app.database import SessionLocal
 from app.models import (
-    ActionItem, AnalysisJob, Conflict, ConflictCheck, Decision, Meeting, MeetingFile,
+    ActionItem, AnalysisJob, Conflict, ConflictCheck, ConflictPosition, Decision, Meeting, MeetingFile,
     MeetingMinutes, Slide, SlideVisual, TranscriptSegment,
 )
 from app.services import slides as slide_service
 from app.services import transcription
 from app.services.llm import LLMError, chat_json_with_retry
 from app.services.images import shrink_image
+from app.services.conflicts import detect_conflicts
 from app.services.prompts import MINUTES_PROMPT, SLIDE_VISION_PROMPT
 
 logger = logging.getLogger("meetingiq.pipeline")
@@ -236,6 +237,34 @@ def run_analysis(meeting_id: str) -> None:
                 status="open",
                 source_seq=seq,
             ))
+
+        # 4b. Conflicts (optional: a failure here does not fail the analysis) ---
+        _set_stage(db, job, "checking conflicts")
+        try:
+            found = detect_conflicts(transcript_lines, slide_rows)
+        except Exception as exc:
+            logger.warning("Conflict check skipped for meeting %s: %s", meeting_id, exc)
+            found = None  # no check row is saved, so the page shows "not checked"
+
+        if found is not None:
+            db.add(ConflictCheck(meeting_id=meeting_id, model_name=MINUTES_MODEL))
+            slide_id_by_number = {row.slide_number: row.id for row, _ in slide_rows}
+            for order, c in enumerate(found):
+                conflict = Conflict(
+                    meeting_id=meeting_id, sort_order=order, kind=c["kind"],
+                    severity=c["severity"], status=c["status"], title=c["title"],
+                    description=c["description"], resolution=c["resolution"],
+                )
+                for pos_order, p in enumerate(c["positions"]):
+                    conflict.positions.append(ConflictPosition(
+                        sort_order=pos_order,
+                        speaker=p["speaker"],
+                        statement=p["statement"][:5000],
+                        source_seqs=p["segment_ids"] or None,
+                        slide_ids=[slide_id_by_number[n] for n in p["slide_numbers"]
+                                   if n in slide_id_by_number] or None,
+                    ))
+                db.add(conflict)
 
         # 5. Finish ---------------------------------------------------------
         meeting.summary = "\n".join(discussion) or None

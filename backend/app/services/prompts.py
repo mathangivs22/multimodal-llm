@@ -74,3 +74,38 @@ Important:
 - Preserve the names shown in the slide.
 - Return valid JSON only.
 """
+
+
+CONFLICTS_PROMPT = """You check a meeting for conflicts. Return JSON only, in exactly this shape:
+
+{{"conflicts": [
+  {{
+    "kind": "speaker_disagreement or speech_vs_slide",
+    "severity": "low, medium or high",
+    "status": "resolved or unresolved",
+    "title": "One line naming both sides",
+    "description": "One or two sentences",
+    "positions": [
+      {{"speaker": "name as spoken", "statement": "what they said", "segment_ids": [3], "slide_numbers": []}},
+      {{"speaker": null, "statement": "what the slide says", "segment_ids": [], "slide_numbers": [2]}}
+    ],
+    "resolution": "how it was settled, or null if still open"
+  }}
+]}}
+
+Rules:
+1. Report only real conflicts: two people disagree, or something said contradicts a slide (numbers, dates, names, scope or a decision). Do not report opinions that everyone accepted, or topics nobody discussed.
+2. "speaker_disagreement": each position is one person's words. Use only the transcript.
+3. "speech_vs_slide": one position is a slide (its number in slide_numbers, speaker null) and the other is what was said (segment_ids). Only report this kind when slides are provided.
+4. Each transcript line starts with a number in [brackets]. Use those numbers in segment_ids. Slide numbers are shown as "Slide N".
+5. Use "resolved" only if the meeting clearly settled it, and then say how in "resolution".
+6. Every conflict needs at least two positions. If there are no conflicts, return {{"conflicts": []}}.
+7. Severity "high" is for dates, money, scope or decisions. "low" is for minor details.
+8. Return valid JSON only.
+
+TRANSCRIPT (each line: [seq] text):
+{transcript}
+
+SLIDES:
+{slides}
+"""
