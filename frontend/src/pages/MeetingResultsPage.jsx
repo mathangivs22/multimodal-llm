@@ -4,6 +4,7 @@ import ConflictsSection from "../components/results/ConflictsSection.jsx";
 import MinutesSection from "../components/results/MinutesSection.jsx";
 import { ResultsProvider } from "../components/results/ResultsContext.jsx";
 import ShareMinutes from "../components/results/ShareMinutes.jsx";
+import SlidesSection from "../components/results/SlidesSection.jsx";
 import AnalysisStatePanel from "../components/AnalysisStatePanel.jsx";
 import RetryAnalysisButton from "../components/RetryAnalysisButton.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
@@ -140,6 +141,7 @@ export default function MeetingResultsPage() {
 
         <MinutesSection />
         <ConflictsSection />
+        <SlidesSection />
       </div>
     </ResultsProvider>
   );
