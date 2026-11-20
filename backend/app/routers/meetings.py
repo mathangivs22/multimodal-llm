@@ -1,7 +1,7 @@
 """Meeting and file upload endpoints."""
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -133,3 +133,20 @@ async def upload_files(
         meeting_id=meeting_id,
         uploaded=[MeetingFileOut.model_validate(r) for r in records],
     )
+
+
+@router.delete("/{meeting_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_meeting(meeting_id: str, db: Session = Depends(get_db)):
+    """Delete a meeting, its files and all its analysis results."""
+    meeting = db.get(Meeting, meeting_id)
+    if meeting is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Meeting not found.")
+    if meeting.status == "processing":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Wait for the analysis to finish before deleting.")
+
+    # Database rows go with the meeting (ON DELETE CASCADE); then the files on disk
+    db.delete(meeting)
+    db.commit()
+    storage.delete_meeting_dir(meeting_id)
+    logger.info("Deleted meeting %s", meeting_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

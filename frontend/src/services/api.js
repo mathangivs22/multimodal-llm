@@ -69,3 +69,8 @@ export async function checkServer(serverUrl) {
   if (data?.status !== "ok") throw new Error("not-meetingiq");
   return true;
 }
+
+/** Delete a meeting with its files and results. The server refuses while it is being analyzed. */
+export async function deleteMeeting(meetingId) {
+  await api.delete(`/meetings/${meetingId}`);
+}
