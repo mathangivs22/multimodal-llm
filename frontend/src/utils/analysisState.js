@@ -22,3 +22,17 @@ export const isAnalyzed = (meeting) => meeting?.status === "completed";
 
 /** How often to re-check a meeting that is being analyzed. */
 export const POLL_MS = 5000;
+
+// Steps the analysis pipeline reports in analysis_jobs.stage (services/pipeline.py)
+export const STAGE_LABELS = {
+  starting: "Starting",
+  transcribing: "Transcribing the recording",
+  "reading slides": "Reading the slides",
+  "reading slide diagrams": "Reading the slide diagrams",
+  "writing minutes": "Writing the minutes",
+  done: "Finished",
+};
+
+export function stageLabel(stage) {
+  return STAGE_LABELS[stage] ?? (stage ? stage[0].toUpperCase() + stage.slice(1) : null);
+}

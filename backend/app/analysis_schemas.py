@@ -48,6 +48,8 @@ class Topic(BaseModel):
 class Decision(BaseModel):
     id: str
     text: str
+    status: Literal["finalized", "suggested"] | None = Field(
+        None, description="finalized = the team clearly agreed; suggested = proposed only; null = unknown")
     decided_by: list[str] = Field(default=[], description="Participant ids")
     evidence: list[EvidenceRef] = []
 
@@ -58,6 +60,7 @@ class ActionItem(BaseModel):
     owner_id: str | None = Field(None, description="Participant id, null if unassigned")
     due_date: date | None = None
     due_text: str | None = Field(None, description="Deadline as spoken, when it isn't a calendar date")
+    status: Literal["open", "done"] = "open"
     evidence: list[EvidenceRef] = []
 
 
@@ -86,6 +89,7 @@ class TranscriptSegment(BaseModel):
     end: Seconds
     text: str
     slide_id: str | None = Field(None, description="Slide on screen while this was said")
+    file_name: str | None = Field(None, description="Recording it came from, when a meeting has several")
 
 
 class TimeRange(BaseModel):

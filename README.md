@@ -77,23 +77,22 @@ python -m pytest
 | `completed` | Analyzed | **View results**: minutes, then conflicts |
 | `failed` | Analysis failed | **Retry analysis** |
 
-The results page is only available once a meeting is `completed`. The analysis pipeline sets the status (`PUT /api/meetings/{id}/status`) and writes its output to `backend/storage/meetings/<meeting_id>/`:
+The results page is only available once a meeting is `completed`. **Analyze / Retry** runs the pipeline (`backend/app/services/pipeline.py`) in the background:
 
-| File | Produced by |
+| Step | Tool |
 |---|---|
-| `transcript.json` | Speech-to-text (Whisper) |
-| `slides_text.json` | Slide text extraction |
-| `vision_results.json` | Diagram reading on slides |
-| `meeting_minutes.json` | LLM: minutes, decisions, action items |
-| `conflicts.json` | LLM: conflicts ([format](backend/formats/README.md)) |
+| Transcribe | faster-whisper (`small` by default) |
+| Read slides | python-pptx, PyMuPDF |
+| Read diagrams | `qwen3-vl:4b` in Ollama |
+| Write the minutes | `qwen2.5:3b` in Ollama |
 
-The backend combines whichever of these exist into what the results page shows, and tells the page which parts are missing (for example "conflict detection hasn't run").
+Results are saved in the database, and the results page reads them from there. For working on the page without the pipeline, it can also read JSON result files from `backend/storage/meetings/<meeting_id>/` (details and the table list in [backend/README.md](backend/README.md)).
 
 ## Status
 
 - **Done:** meeting upload, status tracking, results page (minutes and conflicts), retry for failed analyses, sharing the results (print/PDF, email through your own email app, copy as text), meetings search with status filters, dark mode, Android/iOS app projects.
-- **Analysis pipeline:** the speech-to-text, slide and LLM pipeline is on the `feature/phase-2-llms` branch and isn't merged here yet. On this branch, `POST /api/meetings/{id}/analyze` (the Retry button) is a placeholder that only checks for existing result files; see `backend/app/services/analysis_runner.py`.
-- **Not yet built:** speaker identification, conflict detection in the pipeline (the format is defined), linking decisions back to transcript lines, push notifications in the mobile app (needs a Firebase project), and running the native apps on a device.
+- **Analysis pipeline:** merged from `feature/phase-2-llms`. The results page reads its database results, shows which decisions are only suggested, and shows the current step or why an analysis failed.
+- **Not yet built:** speaker identification, conflict detection in the pipeline (the output format and the database tables exist), push notifications in the mobile app (needs a Firebase project), and running the native apps on a device.
 
 ## Keeping secrets and data out of Git
 

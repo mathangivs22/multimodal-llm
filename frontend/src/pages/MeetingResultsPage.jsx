@@ -78,7 +78,7 @@ export default function MeetingResultsPage() {
           </div>
           <StatusBadge status={meeting.status} />
         </header>
-        <AnalysisStatePanel status={meeting.status}>
+        <AnalysisStatePanel status={meeting.status} job={meeting.latest_job}>
           <div className="analysis-state-actions">
             {meeting.status === "failed" && (
               <RetryAnalysisButton meetingId={meetingId}

@@ -6,10 +6,12 @@ from pathlib import Path
 
 from fastapi import HTTPException, status
 from pydantic import ValidationError
+from sqlalchemy.orm import Session
 
 from app.analysis_schemas import MeetingAnalysis
 from app.config import SERVE_SAMPLE_ANALYSIS, STORAGE_DIR
-from app.services import pipeline_adapter
+from app.models import Meeting
+from app.services import db_results, pipeline_adapter
 
 logger = logging.getLogger("meetingiq.analysis")
 
@@ -27,12 +29,25 @@ def _sample() -> dict:
     return json.loads(SAMPLE_PATH.read_text(encoding="utf-8"))
 
 
-def load_analysis(meeting_id: str) -> MeetingAnalysis:
+def load_analysis(db: Session, meeting: Meeting) -> MeetingAnalysis:
     """Return this meeting's analysis, from the first source that exists:
-    1. analysis.json, already in the MeetingAnalysis format
-    2. the pipeline's raw files (transcript.json, slides_text.json, ...), converted
-    3. sample data, when SERVE_SAMPLE_ANALYSIS is on
+    1. the database: the tables the analysis pipeline writes (services/db_results.py)
+    2. analysis.json in the meeting's storage folder, already in the MeetingAnalysis format
+    3. JSON result files in that folder (transcript.json, slides_text.json, ...), converted
+    4. sample data, when SERVE_SAMPLE_ANALYSIS is on
+    Sources 2-4 are for testing the results page without running the pipeline.
     """
+    meeting_id = meeting.id
+    if db_results.has_db_results(db, meeting_id):
+        try:
+            return db_results.build_analysis_from_db(db, meeting)
+        except (ValidationError, ValueError, TypeError, LookupError) as exc:
+            logger.exception("Could not build the analysis for meeting %s from the database", meeting_id)
+            raise HTTPException(
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "The analysis results for this meeting couldn't be read. Check the server log.",
+            ) from exc
+
     path = analysis_path(meeting_id)
     if path.is_file():
         try:

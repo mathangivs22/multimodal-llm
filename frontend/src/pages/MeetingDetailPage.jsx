@@ -109,7 +109,7 @@ export default function MeetingDetailPage() {
           </Link>
         </section>
       ) : (
-        <AnalysisStatePanel status={meeting.status}>
+        <AnalysisStatePanel status={meeting.status} job={meeting.latest_job}>
           {meeting.status === "failed" && (
             <RetryAnalysisButton meetingId={meetingId}
               onStarted={(status) => setMeeting((m) => ({ ...m, status }))} />

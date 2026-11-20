@@ -35,7 +35,8 @@ export function minutesText(meeting, analysis) {
     if (analysis.decisions.length === 0) add("None recorded.");
     analysis.decisions.forEach((d, i) => {
       const by = d.decided_by.map((id) => people[id]).filter(Boolean);
-      add(`${i + 1}. ${d.text}${by.length ? ` (agreed by ${by.join(", ")})` : ""}`);
+      const suggested = d.status === "suggested" ? " (suggested, not agreed)" : "";
+      add(`${i + 1}. ${d.text}${suggested}${by.length ? ` (agreed by ${by.join(", ")})` : ""}`);
     });
 
     add("", "ACTION ITEMS");
@@ -43,7 +44,7 @@ export function minutesText(meeting, analysis) {
     analysis.action_items.forEach((a) => {
       const owner = (a.owner_id && people[a.owner_id]) || "Unassigned";
       const due = a.due_date ? formatDay(a.due_date) : a.due_text || "no date";
-      add(`- ${a.task} | Owner: ${owner} | Due: ${due}`);
+      add(`- ${a.task} | Owner: ${owner} | Due: ${due}${a.status === "done" ? " | Done" : ""}`);
     });
 
     if (analysis.pending_items.length) {

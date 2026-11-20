@@ -54,7 +54,8 @@ export function EvidenceChip({ refItem }) {
   const seg = segments[refItem.id];
   const who = seg?.speaker_id ? firstName(people[seg.speaker_id]) : null;
   return (
-    <span className="chip chip-quote" title={seg ? `“${seg.text}”` : undefined}>
+    <span className="chip chip-quote"
+      title={seg ? `${seg.file_name ? `${seg.file_name} · ` : ""}“${seg.text}”` : undefined}>
       <QuoteIcon />
       <span className="chip-time">{seg ? formatTimestamp(seg.start) : "?"}</span>
       {who}

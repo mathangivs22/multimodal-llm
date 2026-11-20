@@ -6,3 +6,12 @@ python-multipart>=0.0.9
 python-dotenv>=1.0
 pymysql>=1.1
 cryptography>=42.0
+
+# Phase 2: local analysis
+faster-whisper>=1.0
+python-pptx>=0.6.23
+pymupdf>=1.24
+requests>=2.31
+# Windows only: PowerPoint slide rendering via COM
+pywin32>=306; sys_platform == "win32"
+pillow>=10.0

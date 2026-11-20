@@ -73,10 +73,17 @@ export default function MinutesSection() {
         ) : (
           <ul className="decisions">
             {decisions.map((d) => (
-              <li key={d.id} className="decision">
-                <CheckIcon />
+              <li key={d.id} className={`decision ${d.status === "suggested" ? "decision-suggested" : ""}`}>
+                {d.status === "suggested" ? <SuggestedIcon /> : <CheckIcon />}
                 <div>
-                  <p className="decision-text">{d.text}</p>
+                  <p className="decision-text">
+                    {d.text}
+                    {d.status === "suggested" && (
+                      <span className="tag tag-suggested" title="Proposed in the meeting, but not clearly agreed">
+                        Suggested
+                      </span>
+                    )}
+                  </p>
                   {d.decided_by.length > 0 && (
                     <p className="decision-by">
                       Agreed by {d.decided_by.map((id) => firstName(people[id])).join(", ")}
@@ -106,8 +113,11 @@ export default function MinutesSection() {
             </thead>
             <tbody>
               {actions.map((a) => (
-                <tr key={a.id}>
-                  <td className="action-task">{a.task}</td>
+                <tr key={a.id} className={a.status === "done" ? "action-done" : undefined}>
+                  <td className="action-task">
+                    {a.task}
+                    {a.status === "done" && <span className="tag tag-resolved">Done</span>}
+                  </td>
                   <td>{a.owner_id ? <Speaker id={a.owner_id} /> : <span className="muted">Unassigned</span>}</td>
                   <td className="action-due">
                     {a.due_date ? formatDay(a.due_date) : a.due_text ?? <span className="muted">No date</span>}
@@ -142,6 +152,15 @@ export default function MinutesSection() {
         </div>
       )}
     </section>
+  );
+}
+
+/** Hollow circle: proposed, not (yet) agreed. */
+function SuggestedIcon() {
+  return (
+    <svg className="decision-icon decision-icon-suggested" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="8.25" fill="none" strokeWidth="1.5" strokeDasharray="3 2.4" />
+    </svg>
   );
 }
 

@@ -679,3 +679,18 @@ mark { background: var(--mark-bg); color: var(--mark-text); border-radius: 2px; 
 }
 .filter-chip-empty { opacity: 0.55; }
 .filter-chip-empty:hover { opacity: 1; }
+
+/* ---------- Database results: suggested decisions, done actions, analysis step ---------- */
+.tag-suggested { background: var(--amber-soft); color: var(--amber); margin-left: 8px; vertical-align: 2px; }
+.decision-suggested .decision-text { font-weight: 500; }
+.decision-icon-suggested { fill: none; stroke: var(--amber); }
+.action-done .action-task { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line-strong); }
+.action-done .tag { margin-left: 8px; text-decoration: none; display: inline-block; }
+.analysis-step { font-weight: 600; color: var(--amber); }
+.analysis-error { display: flex; flex-direction: column; gap: 6px; font-size: 0.9375rem; color: var(--danger-text); }
+.analysis-error details summary { cursor: pointer; color: var(--muted); font-size: 0.875rem; }
+.analysis-error pre {
+  margin: 6px 0 0; padding: 10px 12px; max-height: 160px; overflow: auto; white-space: pre-wrap; word-break: break-word;
+  background: var(--surface); border: 1px solid var(--danger-line); border-radius: var(--radius-sm);
+  font-size: 0.8125rem; color: var(--text);
+}
