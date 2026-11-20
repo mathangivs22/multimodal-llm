@@ -55,7 +55,7 @@ SERVE_SAMPLE_ANALYSIS = os.getenv("SERVE_SAMPLE_ANALYSIS", "false").strip().lowe
 # Ollama runs locally; the backend must be on the same machine to reach it.
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 # Vision model reads slide diagrams (must support images)
-VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "qwen3-vl:4b")
+VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "gemma3:4b")
 # Text model writes the minutes (should answer directly, without reasoning text)
 MINUTES_MODEL = os.getenv("OLLAMA_MINUTES_MODEL", "qwen2.5:3b")
 # Cap for one diagram reply; a slide description is much shorter than the minutes
