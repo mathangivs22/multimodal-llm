@@ -21,19 +21,18 @@ Rules:
 5. Each transcript line starts with a number in [brackets]. Put that number in source_seq for the decision or action item it comes from. Use 0 if there is no clear source.
 6. Keep lists short. Use empty strings or empty arrays when information is missing.
 
-Example. Transcript:
-[1] 00:00:00 Alice. Let's go with PostgreSQL. Bob, can you set up the database?
-[2] 00:00:08 Bob. Sure. I'll finish the database setup by November 20.
-[3] 00:00:14 Carol. I suggest we add Redis later.
+Example (unrelated to the meeting you are analyzing; never copy its content). Transcript:
+[1] 00:00:00 Dana. We should ship the report on Friday. Eli, can you check the figures?
+[2] 00:00:07 Eli. Sure. I'll check the figures by Thursday.
 
 Correct output for the example:
-{{"meeting_overview": {{"title": "", "date": "", "participants": ["Alice", "Bob", "Carol"]}},
-  "discussion_summary": ["The team chose PostgreSQL.", "Carol suggested adding Redis later."],
-  "key_decisions": [
-    {{"text": "Use PostgreSQL", "status": "finalized", "source_seq": 1}},
-    {{"text": "Add Redis later", "status": "suggested", "source_seq": 3}}],
-  "action_items": [{{"task": "Set up the database", "owner": "Bob", "deadline": "November 20", "source_seq": 2}}],
+{{"meeting_overview": {{"title": "", "date": "", "participants": ["Dana", "Eli"]}},
+  "discussion_summary": ["The team plans to ship the report on Friday."],
+  "key_decisions": [{{"text": "Ship the report on Friday", "status": "suggested", "source_seq": 1}}],
+  "action_items": [{{"task": "Check the figures", "owner": "Eli", "deadline": "Thursday", "source_seq": 2}}],
   "pending_items": [], "next_meeting": ""}}
+
+Use only the material below. Never include anything from the example.
 
 SLIDES (text and speaker notes):
 {slides}
