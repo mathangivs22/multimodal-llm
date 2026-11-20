@@ -241,7 +241,7 @@ def run_analysis(meeting_id: str) -> None:
             owner = str(item.get("owner") or "").strip()[:200] or None
             deadline = str(item.get("deadline") or "").strip() or None
             # Keep an owner or deadline only if the cited transcript line actually says it
-            if owner and owner.lower() not in source:
+            if owner and owner.lower() not in spoken_text:
                 logger.info("Dropped unsupported owner %r for task %r", owner, item["task"])
                 owner = None
             if deadline and deadline.lower() not in source:
