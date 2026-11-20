@@ -64,3 +64,16 @@ async def save_upload(meeting_id: str, upload: UploadFile, file_type: str) -> tu
 
 def delete_file(rel_path: str) -> None:
     (BASE_DIR / rel_path).unlink(missing_ok=True)
+
+
+def delete_meeting_dir(meeting_id: str) -> None:
+    """Remove every stored file for a meeting (uploads, slide images, extracted files)."""
+    import shutil
+
+    root = STORAGE_DIR.resolve()
+    target = (STORAGE_DIR / meeting_id).resolve()
+    # Only ever delete a folder directly inside the storage root
+    if target.parent != root:
+        logger.error("Refusing to delete %s: outside the storage folder", target)
+        return
+    shutil.rmtree(target, ignore_errors=True)

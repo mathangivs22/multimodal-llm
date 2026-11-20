@@ -1,0 +1,154 @@
+[
+    {
+        "slide_number": 1,
+        "slide_text": [
+            "Welcome to Project Atlas",
+            "New team member onboarding: what we build, how it fits together, and your first two weeks"
+        ],
+        "speaker_notes": "Welcome the new team member. This deck takes about 15 minutes and covers the product, the architecture, and the onboarding plan."
+    },
+    {
+        "slide_number": 2,
+        "slide_text": [
+            "Project at a glance",
+            "What we build\nAtlas is the order management platform behind our online store. It takes orders from web and mobile, charges payments, reserves stock, and keeps customers updated.\nWho uses it\nShoppers through the storefront and app, and our support and warehouse teams through the admin console.",
+            "4",
+            "core services",
+            "2 wk",
+            "sprint cycle",
+            "99.9%",
+            "uptime target",
+            "3",
+            "environments",
+            "2"
+        ],
+        "speaker_notes": "Give the one-sentence pitch, then the key numbers. Mention that the uptime target drives a lot of our design choices."
+    },
+    {
+        "slide_number": 3,
+        "slide_text": [
+            "High-level architecture",
+            "CLIENTS",
+            "Web storefront",
+            "Mobile app",
+            "Admin console",
+            "EDGE",
+            "CDN",
+            "Load balancer",
+            "API gateway",
+            "SERVICES",
+            "Auth service",
+            "Order service",
+            "Inventory service",
+            "Notification service",
+            "DATA",
+            "PostgreSQL",
+            "Redis cache",
+            "Kafka event bus",
+            "EXTERNAL",
+            "Stripe payments",
+            "SendGrid email",
+            "Datadog",
+            "3"
+        ],
+        "speaker_notes": "Read left to right. All client traffic enters through the API gateway. The four services in teal are the code our team owns. Services talk to each other asynchronously through Kafka wherever possible."
+    },
+    {
+        "slide_number": 4,
+        "slide_text": [
+            "How an order flows through the system",
+            "1",
+            "Checkout",
+            "Shopper submits the cart from web or mobile",
+            "2",
+            "Gateway",
+            "Token is validated and the request is routed",
+            "3",
+            "Order service",
+            "Order is written to PostgreSQL as pending",
+            "4",
+            "Payment",
+            "Stripe charges the card; order is confirmed",
+            "5",
+            "Event",
+            "OrderPlaced event is published to Kafka",
+            "Then, asynchronously: the Inventory service reserves stock and the Notification service emails the receipt, both reacting to the Kafka event.",
+            "4"
+        ],
+        "speaker_notes": "This is the most important flow in the system. Steps 1 to 4 are synchronous; the customer waits for them. Everything after the Kafka event happens in the background, which keeps checkout fast."
+    },
+    {
+        "slide_number": 5,
+        "slide_text": [
+            "From commit to production",
+            "Developer",
+            "GitHub pull request",
+            "CI: tests and lint",
+            "Container registry",
+            "Staging",
+            "Production",
+            "Environments",
+            "Dev, staging and production run on Kubernetes in AWS, defined in Terraform.",
+            "Observability",
+            "Metrics and traces in Datadog, errors in Sentry. Every service has a dashboard.",
+            "Rollback",
+            "Argo CD deploys from Git, so reverting a commit rolls production back.",
+            "5"
+        ],
+        "speaker_notes": "Every merge to main deploys to staging automatically. Production deploys need one approval. Show them the Argo CD and Datadog dashboards after this slide."
+    },
+    {
+        "slide_number": 6,
+        "slide_text": [
+            "Tech stack",
+            "Frontend",
+            "React, TypeScript, React Native",
+            "Backend",
+            "Node.js and Go services, REST and gRPC",
+            "Data",
+            "PostgreSQL, Redis, Kafka",
+            "Infrastructure",
+            "AWS, Kubernetes, Terraform",
+            "CI/CD",
+            "GitHub Actions, Argo CD",
+            "Observability",
+            "Datadog, Sentry, PagerDuty",
+            "6"
+        ],
+        "speaker_notes": "No need to know all of these on day one. Focus first on the backend and data rows, since those are where most tickets land."
+    },
+    {
+        "slide_number": 7,
+        "slide_text": [
+            "Your first two weeks",
+            "Day 1",
+            "Laptop, accounts and access. Meet your onboarding buddy.",
+            "Days 2\u20133",
+            "Run Atlas locally. Read the architecture docs and service READMEs.",
+            "Week 1",
+            "Pick up a starter ticket and ship your first pull request.",
+            "Week 2",
+            "Join the on-call shadow rotation and present a small demo.",
+            "Goal by end of week 2: you can explain the order flow and have shipped code to production.",
+            "7"
+        ],
+        "speaker_notes": "Set expectations: nobody expects big output in the first two weeks. The aim is a working setup, one shipped change, and understanding the main flow."
+    },
+    {
+        "slide_number": 8,
+        "slide_text": [
+            "Who to ask and where to look",
+            "Tech lead",
+            "Architecture and design questions",
+            "Engineering manager",
+            "Goals, process and career",
+            "Onboarding buddy",
+            "Anything at all, especially early on",
+            "Resources",
+            "atlas-platform repository",
+            "Engineering wiki: Atlas docs",
+            "#atlas-dev on Slack"
+        ],
+        "speaker_notes": "Close by sharing the actual links and introducing the buddy in person. Invite questions."
+    }
+]

@@ -1,0 +1,48 @@
+{
+  "conflicts": [
+    {
+      "kind": "speech_vs_slide",
+      "severity": "high",
+      "status": "unresolved",
+      "title": "The slides are an onboarding deck, but the meeting is sprint planning",
+      "description": "The deck presented is 'Welcome to Project Atlas', a new team member onboarding deck, while the discussion is Sprint 14 planning. Nothing said refers to the slides.",
+      "positions": [
+        {
+          "speaker": null,
+          "statement": "Welcome to Project Atlas: new team member onboarding.",
+          "segment_ids": [],
+          "slide_numbers": [1]
+        },
+        {
+          "speaker": null,
+          "statement": "Let's get started with sprint planning. This is sprint 14.",
+          "segment_ids": [0],
+          "slide_numbers": []
+        }
+      ],
+      "resolution": null
+    },
+    {
+      "kind": "speaker_disagreement",
+      "severity": "low",
+      "status": "resolved",
+      "title": "Whether to pull the full PDF export into the sprint",
+      "description": "One participant suggested adding the PDF export to use the remaining capacity; another said its 8 points would take the sprint over velocity and leave no buffer for bugs.",
+      "positions": [
+        {
+          "speaker": null,
+          "statement": "We're at 13 points with velocity around 20, so there's room to pull in the PDF export.",
+          "segment_ids": [7],
+          "slide_numbers": []
+        },
+        {
+          "speaker": null,
+          "statement": "The export is about 8 points, which puts us over. Better to leave buffer for bugs.",
+          "segment_ids": [8],
+          "slide_numbers": []
+        }
+      ],
+      "resolution": "Only the basic PDF layout (3 points) is in the sprint, for 16 points in total."
+    }
+  ]
+}

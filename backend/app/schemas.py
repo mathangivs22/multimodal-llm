@@ -1,6 +1,12 @@
-"""Pydantic request/response schemas."""
+"""Pydantic request/response schemas.
+
+CHANGED ON feature/analysis (merging feature/phase-2-llms):
+- Removed feature/analysis's own AnalyzeAccepted (the one below, from phase 2, is kept).
+- MeetingDetail.latest_job: the newest analysis job, so the meeting and results pages can
+  show the current step and why an analysis failed. Filled in by GET /api/meetings/{id}.
+"""
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
@@ -14,6 +20,10 @@ UTCDateTime = Annotated[
 class MeetingCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: str | None = Field(None, max_length=5000)
+
+
+class MeetingStatusUpdate(BaseModel):
+    status: Literal["created", "uploaded", "processing", "completed", "failed"]
 
 
 class MeetingFileOut(BaseModel):
@@ -41,6 +51,7 @@ class MeetingOut(BaseModel):
 
 class MeetingDetail(MeetingOut):
     files: list[MeetingFileOut] = []
+    latest_job: "JobOut | None" = None  # newest analysis_jobs row, see GET /api/meetings/{id}
 
 
 class UploadResult(BaseModel):
@@ -141,3 +152,13 @@ class ResultsOut(BaseModel):
     minutes: MinutesOut | None
     decisions: list[DecisionOut]
     action_items: list[ActionItemOut]
+
+
+# MeetingDetail refers to JobOut, which is defined further down
+MeetingDetail.model_rebuild()
+
+
+class MeetingListItem(MeetingOut):
+    """A row on the meetings page: the meeting plus a summary of its files."""
+    file_count: int = 0
+    file_types: list[str] = []  # distinct types, in the order they were uploaded

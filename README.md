@@ -1,123 +1,53 @@
 # MeetingIQ (Multimodal LLM)
 
-MeetingIQ is a full-stack project for organizing meeting information and uploaded media. The Phase 1 backend is designed to store meeting metadata and associated audio, video, or presentation files, while preparing the data for future transcription, slide analysis, decision extraction, and evidence linking.
+MeetingIQ analyzes meetings from what was **said** (the recording) and what was **shown** (the slides). You upload a recording and the deck; the analysis produces the minutes of the meeting (summary, decisions, action items, pending items) and flags **conflicts**: places where people disagreed, or where what was said contradicts the slides.
 
-## Current project layout
+It runs as a website and as an Android/iOS app, both backed by the same FastAPI server.
+
+## Project layout
 
 ```text
 multimodal-llm/
-|-- backend/
+|-- backend/                 FastAPI + SQLAlchemy API            -> backend/README.md
 |   |-- app/
-|   |   |-- routers/       # API routes, including meeting and file endpoints
-|   |   |-- services/      # Storage and file-handling services
-|   |   |-- config.py      # Environment and storage configuration
-|   |   |-- database.py    # SQLAlchemy setup
-|   |   |-- models.py      # Meeting and MeetingFile models
-|   |   |-- schemas.py     # API request and response schemas
-|   |   `-- main.py        # FastAPI application entry point
-|   |-- storage/
-|   |   `-- meetings/      # Uploaded meeting files, organized by meeting ID
-|   |-- .env               # Local database configuration (not committed)
-|   |-- .env.example       # Environment variable template
-|   `-- .venv/             # Optional local Python virtual environment
-|-- frontend/
-|   `-- node_modules/      # Local installed frontend dependencies
+|   |   |-- routers/         meetings, files, status, analysis endpoints
+|   |   |-- services/        storage, analysis loading, pipeline-output adapter
+|   |   |-- analysis_schemas.py   format of the analysis the results page reads
+|   |   `-- sample_data/     example analysis for UI work
+|   |-- formats/             JSON format for conflicts.json        -> backend/formats/README.md
+|   |-- tests/               pytest tests and real pipeline output as fixtures
+|   `-- storage/meetings/    uploaded files and analysis output, per meeting (not committed)
+|-- frontend/                React + Vite web app                  -> frontend/README.md
+|   |-- src/                 pages, components, API calls, styles
+|   |-- android/, ios/       Capacitor native app projects          -> frontend/MOBILE.md
+|   `-- capacitor.config.json
 `-- README.md
 ```
 
-> **Repository status:** At present, the source tree contains backend metadata/cache and local dependency directories, but the tracked project currently has no committed backend or frontend application source files. The structure and API details below describe the intended Phase 1 implementation and should be updated when the source files are restored or committed.
+## Technology
 
-## Technology stack
+- **Backend:** Python, FastAPI, SQLAlchemy; MySQL via `DATABASE_URL`, or SQLite if it isn't set
+- **Frontend:** React 18, React Router, Vite
+- **Mobile:** Capacitor 8 (Android and iOS) wrapping the same React app
+- **Files:** stored on the local filesystem under `backend/storage/meetings/`
 
-- **Backend:** Python, FastAPI, SQLAlchemy
-- **Database:** MySQL by default through `DATABASE_URL`; SQLite is supported as a fallback
-- **File storage:** Local filesystem under `backend/storage/meetings/`
-- **Frontend:** Intended React application with Vite
-- **Development platforms:** Windows PowerShell and standard Python/Node tooling
+## Running it
 
-## Backend overview
+Start the backend, then the frontend, in two terminals.
 
-The backend exposes a FastAPI application named **MeetingIQ API**. Startup creates the storage directory and initializes the database.
-
-### API routes
-
-| Method | Route | Purpose |
-|---|---|---|
-| `GET` | `/api/health` | Basic API health check |
-| `/api/meetings` | Meeting collection routes | Create, list, and manage meetings |
-| `GET` | `/api/meetings/{meeting_id}` | Retrieve meeting details |
-| `/api/meetings/{meeting_id}/files` | Meeting file routes | Upload or list meeting files |
-
-The API includes interactive documentation when the FastAPI server is running:
-
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-### Database configuration
-
-Copy the environment template and configure the MySQL connection:
+**Backend** (details, MySQL setup and endpoints in [backend/README.md](backend/README.md)):
 
 ```powershell
 cd backend
-Copy-Item .env.example .env
-```
-
-
-
-URL-encode database passwords containing reserved characters such as `@`, `:`, `/`, `#`, or `%`. If `DATABASE_URL` is not set, the backend configuration can fall back to SQLite.
-
-The local `.env` file contains credentials and must not be committed.
-
-### Supported meeting files
-
-The storage service is prepared for meeting assets in these categories:
-
-- Audio recordings
-- Video recordings
-- Presentations
-
-Presentation files include `.pptx` and `.pdf` formats. Upload limits and allowed extensions are controlled by the backend configuration.
-
-Uploaded files are stored in a meeting-specific directory:
-
-```text
-backend/storage/meetings/{meeting_id}/{file_id}.{extension}
-```
-
-## Backend setup
-
-Run the following commands from the repository root:
-
-```powershell
-cd backend
-
-# Create and activate a virtual environment
-py -3.13 -m venv .venv
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-
-# Install the backend dependencies once their package manifest is restored
-python -m pip install --upgrade pip
-python -m pip install fastapi uvicorn sqlalchemy pymysql python-dotenv python-multipart
-
-# Start the API
-uvicorn app.main:app --reload
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 ```
 
-Verify the server:
+Without a `.env` file the backend uses a local SQLite database, which is enough to try it out. API docs: http://localhost:8000/docs
 
-```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/api/health"
-```
-
-The health endpoint should return:
-
-```json
-{"status":"ok"}
-```
-
-## Frontend setup
-
-The frontend directory currently contains only local `node_modules` dependencies. Once the React/Vite source and package manifest are present, setup will normally use:
+**Frontend** ([frontend/README.md](frontend/README.md)):
 
 ```powershell
 cd frontend
@@ -125,25 +55,45 @@ npm install
 npm run dev
 ```
 
-The default Vite development origin is `http://localhost:5173`, which is also included in the intended CORS configuration.
+Open http://localhost:5173. The dev server forwards `/api` to the backend on port 8000.
 
-## Recommended project structure
+**Mobile app** ([frontend/MOBILE.md](frontend/MOBILE.md)): start the backend with `--host 0.0.0.0`, then `npm run mobile:android` (Android Studio) or `npm run mobile:ios` (Xcode on a Mac). On first launch the app asks for the server address, e.g. `192.168.1.20:8000`.
 
-As source files are restored, keep generated and secret data out of Git:
+**Tests:**
 
-- Commit application code, tests, and dependency manifests.
-- Do not commit `.venv/`, `node_modules/`, `.env`, databases, or uploaded meeting media.
-- Keep API routers in `backend/app/routers/`.
-- Keep reusable I/O and storage logic in `backend/app/services/`.
-- Keep SQLAlchemy models and Pydantic schemas separate for clear API boundaries.
-- Add frontend components and API calls under `frontend/src/`.
+```powershell
+cd backend
+pip install -r requirements-dev.txt
+python -m pytest
+```
 
-## Future roadmap
+## How a meeting moves through the app
 
-- Restore and version the backend source and frontend application
-- Add dependency manifests and reproducible setup instructions
-- Add automated backend and frontend tests
-- Integrate speech-to-text transcription
-- Parse presentation slides and extract key content
-- Summarize meetings and identify decisions and action items
-- Link summary claims and decisions to audio and slide evidence
+| Status | Shown as | What the user can do |
+|---|---|---|
+| `created` | Waiting for files | Upload a recording and slides |
+| `uploaded` | Ready to analyze | Wait for analysis |
+| `processing` | Analyzing | Pages refresh every 5 seconds until it finishes |
+| `completed` | Analyzed | **View results**: minutes, then conflicts |
+| `failed` | Analysis failed | **Retry analysis** |
+
+The results page is only available once a meeting is `completed`. **Analyze / Retry** runs the pipeline (`backend/app/services/pipeline.py`) in the background:
+
+| Step | Tool |
+|---|---|
+| Transcribe | faster-whisper (`small` by default) |
+| Read slides | python-pptx, PyMuPDF |
+| Read diagrams | `qwen3-vl:4b` in Ollama |
+| Write the minutes | `qwen2.5:3b` in Ollama |
+
+Results are saved in the database, and the results page reads them from there. For working on the page without the pipeline, it can also read JSON result files from `backend/storage/meetings/<meeting_id>/` (details and the table list in [backend/README.md](backend/README.md)).
+
+## Status
+
+- **Done:** meeting upload, status tracking, results page (minutes and conflicts), retry for failed analyses, sharing the results (print/PDF, email through your own email app, copy as text), meetings search with status filters, dark mode, Android/iOS app projects.
+- **Analysis pipeline:** merged from `feature/phase-2-llms`. The results page reads its database results, shows which decisions are only suggested, and shows the current step or why an analysis failed.
+- **Not yet built:** speaker identification, conflict detection in the pipeline (the output format and the database tables exist), push notifications in the mobile app (needs a Firebase project), and running the native apps on a device.
+
+## Keeping secrets and data out of Git
+
+Don't commit `.venv/`, `node_modules/`, `.env`, the SQLite database, uploaded meeting media or `backend/storage/meetings/`. These are already in `.gitignore`.

@@ -2,9 +2,15 @@
 
 Runs in a background thread started by POST /api/meetings/{id}/analyze.
 Each run replaces the previous results for the meeting.
+
+CHANGED ON feature/analysis (merging feature/phase-2-llms):
+- _clear_previous_results() also deletes the meeting's conflict results
+  (ConflictCheck, Conflict; positions go with their conflict), so a re-run never
+  shows conflicts from an earlier run. Nothing else in this file was changed.
 """
 import json
 import logging
+import re
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -14,13 +20,14 @@ from app.config import (
 )
 from app.database import SessionLocal
 from app.models import (
-    ActionItem, AnalysisJob, Decision, Meeting, MeetingFile, MeetingMinutes,
-    Slide, SlideVisual, TranscriptSegment,
+    ActionItem, AnalysisJob, Conflict, ConflictCheck, ConflictPosition, Decision, Meeting, MeetingFile,
+    MeetingMinutes, Slide, SlideVisual, TranscriptSegment,
 )
 from app.services import slides as slide_service
 from app.services import transcription
 from app.services.llm import LLMError, chat_json_with_retry
 from app.services.images import shrink_image
+from app.services.conflicts import detect_conflicts
 from app.services.prompts import MINUTES_PROMPT, SLIDE_VISION_PROMPT
 
 logger = logging.getLogger("meetingiq.pipeline")
@@ -55,6 +62,21 @@ def _parse_date(text: str | None) -> date | None:
     return None  # e.g. "November 20" has no year: keep only the text
 
 
+PLACEHOLDER = re.compile(r"\[\s*\d+\s*\]")
+
+
+def _clean_names(values, spoken_text: str) -> list[str]:
+    """Keep names that the transcript really contains; drop transcript numbers like "[1]"."""
+    names: list[str] = []
+    for v in values if isinstance(values, list) else []:
+        name = str(v).strip()
+        if not name or PLACEHOLDER.fullmatch(name) or name.lower() not in spoken_text:
+            continue
+        if name not in names:
+            names.append(name)
+    return names
+
+
 def _as_list(value) -> list:
     return value if isinstance(value, list) else []
 
@@ -74,7 +96,8 @@ def _set_stage(db, job: AnalysisJob, stage: str) -> None:
 
 
 def _clear_previous_results(db, meeting_id: str) -> None:
-    for model in (TranscriptSegment, Slide, MeetingMinutes, Decision, ActionItem):
+    for model in (TranscriptSegment, Slide, MeetingMinutes, Decision, ActionItem,
+                  ConflictCheck, Conflict):
         db.query(model).filter(model.meeting_id == meeting_id).delete(synchronize_session=False)
     db.commit()
 
@@ -186,6 +209,9 @@ def run_analysis(meeting_id: str) -> None:
         line_text = {s.seq: s.text.lower() for s in transcript_lines}
         valid_seqs = set(line_text)
         overview = minutes.get("meeting_overview") if isinstance(minutes.get("meeting_overview"), dict) else {}
+        spoken_text = " ".join(s.text for s in transcript_lines).lower()
+        if isinstance(overview, dict):
+            overview["participants"] = _clean_names(overview.get("participants"), spoken_text)
         discussion = [str(x) for x in _as_list(minutes.get("discussion_summary"))]
 
         db.add(MeetingMinutes(
@@ -215,7 +241,7 @@ def run_analysis(meeting_id: str) -> None:
             owner = str(item.get("owner") or "").strip()[:200] or None
             deadline = str(item.get("deadline") or "").strip() or None
             # Keep an owner or deadline only if the cited transcript line actually says it
-            if owner and owner.lower() not in source:
+            if owner and owner.lower() not in spoken_text:
                 logger.info("Dropped unsupported owner %r for task %r", owner, item["task"])
                 owner = None
             if deadline and deadline.lower() not in source:
@@ -230,6 +256,37 @@ def run_analysis(meeting_id: str) -> None:
                 status="open",
                 source_seq=seq,
             ))
+
+        # 4b. Conflicts (optional: a failure here does not fail the analysis) ---
+        _set_stage(db, job, "checking conflicts")
+        try:
+            found = detect_conflicts(
+                transcript_lines, slide_rows,
+                attendees=(overview.get("participants") or []) if isinstance(overview, dict) else [],
+            )
+        except Exception as exc:
+            logger.warning("Conflict check skipped for meeting %s: %s", meeting_id, exc)
+            found = None  # no check row is saved, so the page shows "not checked"
+
+        if found is not None:
+            db.add(ConflictCheck(meeting_id=meeting_id, model_name=MINUTES_MODEL))
+            slide_id_by_number = {row.slide_number: row.id for row, _ in slide_rows}
+            for order, c in enumerate(found):
+                conflict = Conflict(
+                    meeting_id=meeting_id, sort_order=order, kind=c["kind"],
+                    severity=c["severity"], status=c["status"], title=c["title"],
+                    description=c["description"], resolution=c["resolution"],
+                )
+                for pos_order, p in enumerate(c["positions"]):
+                    conflict.positions.append(ConflictPosition(
+                        sort_order=pos_order,
+                        speaker=p["speaker"],
+                        statement=p["statement"][:5000],
+                        source_seqs=p["segment_ids"] or None,
+                        slide_ids=[slide_id_by_number[n] for n in p["slide_numbers"]
+                                   if n in slide_id_by_number] or None,
+                    ))
+                db.add(conflict)
 
         # 5. Finish ---------------------------------------------------------
         meeting.summary = "\n".join(discussion) or None

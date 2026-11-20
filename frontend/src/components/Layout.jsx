@@ -1,4 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { isNativeApp } from "../services/server.js";
+import ThemeToggle from "./ThemeToggle.jsx";
 
 function Logo() {
   return (
@@ -20,12 +22,18 @@ export default function Layout() {
         </NavLink>
         <nav className="nav" aria-label="Main">
           <NavLink to="/" end className="nav-link">
-            Meetings
+            <span className="nav-icon" aria-hidden="true">🗂️</span> Meetings
           </NavLink>
           <NavLink to="/meetings/new" className="nav-link">
-            New meeting
+            <span className="nav-icon" aria-hidden="true">➕</span> New meeting
           </NavLink>
+          {isNativeApp && (
+            <NavLink to="/settings" className="nav-link">
+              <span className="nav-icon" aria-hidden="true">⚙️</span> Settings
+            </NavLink>
+          )}
         </nav>
+        <ThemeToggle />
         <p className="sidebar-foot">Runs locally. Your recordings never leave this machine.</p>
       </aside>
       <main className="main">

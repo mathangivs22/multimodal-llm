@@ -1,0 +1,34 @@
+{
+    "meeting_overview": {
+        "title": "Sprint Planning Sprint 14",
+        "date": "",
+        "participants": [
+            "Marcus",
+            "Dev"
+        ]
+    },
+    "discussion_summary": [
+        "Reviewed top backlog items: new Ligon Flow with 2FA, dashboard performance fixes, export to PDF.",
+        "Split login flow into two stories: email code (3 points) and authenticator app (5 points).",
+        "Estimated dashboard fixes at 5 points.",
+        "Decided to include only basic layout of PDF export (3 points) to keep sprint under 20 points.",
+        "Set sprint goal: ship Ligon Flow with 2FA, faster dashboards, start PDF export."
+    ],
+    "key_decisions": [
+        "Login flow split into two stories.",
+        "Email code story estimated at 3 points.",
+        "Authenticator app story estimated at 5 points.",
+        "Dashboard fixes estimated at 5 points.",
+        "Basic PDF export layout (3 points) included.",
+        "Sprint goal set as above."
+    ],
+    "action_items": [
+        {
+            "task": "Update the board with new estimates and sprint goal",
+            "owner": "",
+            "deadline": ""
+        }
+    ],
+    "pending_items": [],
+    "next_meeting": ""
+}

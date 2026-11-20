@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Lets the app talk to a MeetingIQ server over plain http, e.g. a laptop on the same Wi-Fi
+  (http://192.168.1.20:8000). Android blocks cleartext traffic by default, and the laptop's
+  address isn't known in advance. If the app will only ever use a hosted https:// server,
+  set cleartextTrafficPermitted to false.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

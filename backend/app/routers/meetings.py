@@ -1,14 +1,18 @@
 """Meeting and file upload endpoints."""
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.analysis_schemas import MeetingAnalysis
 from app.database import get_db
-from app.models import Meeting, MeetingFile
-from app.schemas import MeetingCreate, MeetingDetail, MeetingFileOut, MeetingOut, UploadResult
-from app.services import storage
+from app.models import AnalysisJob, Meeting, MeetingFile
+from app.schemas import (
+    MeetingListItem,
+    JobOut, MeetingCreate, MeetingDetail, MeetingFileOut, MeetingOut, MeetingStatusUpdate, UploadResult,
+)
+from app.services import analysis, storage
 
 logger = logging.getLogger("meetingiq.api")
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
@@ -31,14 +35,78 @@ def create_meeting(payload: MeetingCreate, db: Session = Depends(get_db)):
     return meeting
 
 
-@router.get("", response_model=list[MeetingOut])
+@router.get("", response_model=list[MeetingListItem])
 def list_meetings(db: Session = Depends(get_db)):
-    return db.scalars(select(Meeting).order_by(Meeting.created_at.desc())).all()
+    meetings = db.scalars(select(Meeting).order_by(Meeting.created_at.desc())).all()
+    files = db.execute(
+        select(MeetingFile.meeting_id, MeetingFile.file_type).order_by(MeetingFile.uploaded_at)
+    ).all()
+    types_by_meeting: dict[str, list[str]] = {}
+    for meeting_id, file_type in files:
+        types = types_by_meeting.setdefault(meeting_id, [])
+        if file_type not in types:
+            types.append(file_type)
+    count_by_meeting: dict[str, int] = {}
+    for meeting_id, _ in files:
+        count_by_meeting[meeting_id] = count_by_meeting.get(meeting_id, 0) + 1
+    return [
+        MeetingListItem(
+            **MeetingOut.model_validate(m).model_dump(),
+            file_count=count_by_meeting.get(m.id, 0),
+            file_types=types_by_meeting.get(m.id, []),
+        )
+        for m in meetings
+    ]
 
 
 @router.get("/{meeting_id}", response_model=MeetingDetail)
 def get_meeting(meeting_id: str, db: Session = Depends(get_db)):
-    return _get_meeting_or_404(db, meeting_id)
+    """Meeting, its files, and the newest analysis job (current step, or why it failed)."""
+    meeting = _get_meeting_or_404(db, meeting_id)
+    job = db.scalars(
+        select(AnalysisJob).where(AnalysisJob.meeting_id == meeting_id)
+        .order_by(AnalysisJob.started_at.desc()).limit(1)
+    ).first()
+    detail = MeetingDetail.model_validate(meeting)
+    detail.latest_job = JobOut.model_validate(job) if job else None
+    return detail
+
+
+@router.get("/{meeting_id}/analysis", response_model=MeetingAnalysis)
+def get_meeting_analysis(meeting_id: str, db: Session = Depends(get_db)):
+    """Minutes and conflicts for the results page (built from the database, or from JSON
+    files when the meeting has no database results). Only once the meeting is 'completed'."""
+    meeting = _get_meeting_or_404(db, meeting_id)
+    if meeting.status != "completed":
+        raise HTTPException(status.HTTP_409_CONFLICT, _NOT_READY.get(meeting.status, "Analysis isn't complete."))
+    return analysis.load_analysis(db, meeting)
+
+
+_NOT_READY = {
+    "created": "This meeting has no files yet, so it hasn't been analyzed.",
+    "uploaded": "This meeting hasn't been analyzed yet.",
+    "processing": "This meeting is still being analyzed.",
+    "failed": "The analysis of this meeting failed.",
+}
+
+
+@router.put("/{meeting_id}/status", response_model=MeetingOut)
+def set_meeting_status(meeting_id: str, payload: MeetingStatusUpdate, db: Session = Depends(get_db)):
+    """Set a meeting's status by hand, for testing with JSON result files.
+
+    The real pipeline (POST /analyze in routers/analysis.py) sets the status itself.
+    Use this only to mark a meeting 'completed' after copying result files into its
+    storage folder, when the pipeline isn't run."""
+    meeting = db.get(Meeting, meeting_id)
+    if meeting is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meeting not found.")
+    if payload.status in ("processing", "completed") and not meeting.files:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Upload files before analyzing this meeting.")
+    meeting.status = payload.status
+    db.commit()
+    db.refresh(meeting)
+    logger.info("Meeting %s status -> %s", meeting.id, meeting.status)
+    return meeting
 
 
 @router.post("/{meeting_id}/files", response_model=UploadResult, status_code=status.HTTP_201_CREATED)
@@ -85,3 +153,20 @@ async def upload_files(
         meeting_id=meeting_id,
         uploaded=[MeetingFileOut.model_validate(r) for r in records],
     )
+
+
+@router.delete("/{meeting_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_meeting(meeting_id: str, db: Session = Depends(get_db)):
+    """Delete a meeting, its files and all its analysis results."""
+    meeting = db.get(Meeting, meeting_id)
+    if meeting is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Meeting not found.")
+    if meeting.status == "processing":
+        raise HTTPException(status.HTTP_409_CONFLICT, "Wait for the analysis to finish before deleting.")
+
+    # Database rows go with the meeting (ON DELETE CASCADE); then the files on disk
+    db.delete(meeting)
+    db.commit()
+    storage.delete_meeting_dir(meeting_id)
+    logger.info("Deleted meeting %s", meeting_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
