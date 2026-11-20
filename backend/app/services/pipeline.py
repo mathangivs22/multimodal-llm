@@ -183,7 +183,8 @@ def run_analysis(meeting_id: str) -> None:
         logger.info("Minutes: prompt is %d chars", len(prompt))
         minutes, raw = chat_json_with_retry(prompt, model=MINUTES_MODEL, label="minutes")
 
-        valid_seqs = {s.seq for s in transcript_lines}
+        line_text = {s.seq: s.text.lower() for s in transcript_lines}
+        valid_seqs = set(line_text)
         overview = minutes.get("meeting_overview") if isinstance(minutes.get("meeting_overview"), dict) else {}
         discussion = [str(x) for x in _as_list(minutes.get("discussion_summary"))]
 
@@ -209,15 +210,25 @@ def run_analysis(meeting_id: str) -> None:
         for item in _as_list(minutes.get("action_items")):
             if not isinstance(item, dict) or not item.get("task"):
                 continue
-            deadline = item.get("deadline") or None
+            seq = _as_seq(item.get("source_seq"), valid_seqs)
+            source = line_text.get(seq, "")
+            owner = str(item.get("owner") or "").strip()[:200] or None
+            deadline = str(item.get("deadline") or "").strip() or None
+            # Keep an owner or deadline only if the cited transcript line actually says it
+            if owner and owner.lower() not in source:
+                logger.info("Dropped unsupported owner %r for task %r", owner, item["task"])
+                owner = None
+            if deadline and deadline.lower() not in source:
+                logger.info("Dropped unsupported deadline %r for task %r", deadline, item["task"])
+                deadline = None
             db.add(ActionItem(
                 meeting_id=meeting_id,
                 task=str(item["task"]),
-                owner=str(item.get("owner") or "")[:200] or None,
-                deadline_text=str(deadline)[:200] if deadline else None,
+                owner=owner,
+                deadline_text=deadline[:200] if deadline else None,
                 deadline_date=_parse_date(deadline),
                 status="open",
-                source_seq=_as_seq(item.get("source_seq"), valid_seqs),
+                source_seq=seq,
             ))
 
         # 5. Finish ---------------------------------------------------------
