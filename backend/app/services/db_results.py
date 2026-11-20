@@ -100,6 +100,8 @@ def build_analysis_from_db(db: Session, meeting: Meeting) -> MeetingAnalysis:
             "text": (s.body_text or "").strip(),
             "speaker_notes": _text(s.speaker_notes),
             "shown_at": [],  # the pipeline doesn't record when each slide was on screen
+            # Served by GET /api/meetings/{id}/slides/{slide_id}/image; null if no image was rendered
+            "image_url": (f"/api/meetings/{meeting.id}/slides/{s.id}/image" if s.image_path else None),
             "diagram": _convert_diagram({
                 "components": v.components, "relationships": v.relationships,
                 "workflow_steps": v.workflow_steps, "uncertain_relationships": v.uncertain_relationships,

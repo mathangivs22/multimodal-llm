@@ -128,6 +128,7 @@ class Slide(BaseModel):
     text: str = Field("", description="Text extracted from the slide")
     speaker_notes: str | None = None
     shown_at: list[TimeRange] = []
+    image_url: str | None = Field(None, description="Picture of the slide, when one was rendered")
     diagram: Diagram | None = None
 
 
