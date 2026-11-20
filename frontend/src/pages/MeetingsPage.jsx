@@ -129,6 +129,13 @@ export default function MeetingsPage() {
 
       {meetings?.length > 0 && (
         <>
+          <div className="stat-strip" aria-label="Summary">
+            <StatCard icon="📁" label="Meetings" value={meetings.length} />
+            <StatCard icon="✅" label="Analyzed" value={meetings.filter((m) => m.status === "completed").length} />
+            <StatCard icon="⏳" label="In progress" value={meetings.filter((m) => m.status === "processing").length} />
+            <StatCard icon="📝" label="Ready to analyze" value={meetings.filter((m) => m.status === "uploaded").length} />
+          </div>
+
           <div className="search" role="search">
             <div className="search-box">
               <SearchIcon />
@@ -184,7 +191,7 @@ export default function MeetingsPage() {
           ) : (
             <ul className="meeting-list">
               {visible.map((m) => (
-                <li key={m.id} className="meeting-item">
+                <li key={m.id} className={`meeting-item meeting-item-${m.status}`}>
                   <Link to={`/meetings/${m.id}`} className="meeting-row">
                     <div className="meeting-row-main">
                       <span className="meeting-title"><Highlight text={m.title} terms={terms} /></span>
@@ -216,7 +223,19 @@ export default function MeetingsPage() {
   );
 }
 
-const FILE_TYPE_NAMES = { audio: "Audio", video: "Video", presentation: "Slides" };
+const FILE_TYPE_NAMES = { audio: "🎙️ Audio", video: "🎬 Video", presentation: "📊 Slides" };
+
+function StatCard({ icon, label, value }) {
+  return (
+    <div className="stat-card">
+      <span className="stat-icon" aria-hidden="true">{icon}</span>
+      <div>
+        <div className="stat-value">{value}</div>
+        <div className="stat-label">{label}</div>
+      </div>
+    </div>
+  );
+}
 
 /** "2 files · Audio, Slides" for a meeting row; empty when nothing was uploaded yet. */
 function fileSummary(m) {

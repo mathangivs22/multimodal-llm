@@ -22,14 +22,14 @@ export default function Layout() {
         </NavLink>
         <nav className="nav" aria-label="Main">
           <NavLink to="/" end className="nav-link">
-            Meetings
+            <span className="nav-icon" aria-hidden="true">🗂️</span> Meetings
           </NavLink>
           <NavLink to="/meetings/new" className="nav-link">
-            New meeting
+            <span className="nav-icon" aria-hidden="true">➕</span> New meeting
           </NavLink>
           {isNativeApp && (
             <NavLink to="/settings" className="nav-link">
-              Settings
+              <span className="nav-icon" aria-hidden="true">⚙️</span> Settings
             </NavLink>
           )}
         </nav>

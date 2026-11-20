@@ -722,3 +722,21 @@ mark { background: var(--mark-bg); color: var(--mark-text); border-radius: 2px; 
 }
 .meeting-delete:hover:not(:disabled) { color: var(--danger); }
 .meeting-delete:disabled { cursor: not-allowed; opacity: 0.5; }
+
+/* Visual polish: summary cards, status edges, nav icons */
+.nav-icon { display: inline-block; width: 1.4em; margin-right: 6px; text-align: center; }
+.stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 4px 0 18px; }
+.stat-card {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 1px 2px rgba(23, 32, 46, 0.04);
+}
+.stat-icon { font-size: 1.5rem; line-height: 1; }
+.stat-value { font-size: 1.5rem; font-weight: 700; color: var(--ink); line-height: 1.1; }
+.stat-label { font-size: 0.8rem; color: var(--muted); }
+.meeting-item { border-left: 4px solid transparent; }
+.meeting-item-completed { border-left-color: var(--teal); }
+.meeting-item-processing { border-left-color: var(--marker); }
+.meeting-item-uploaded { border-left-color: var(--mint); }
+.meeting-item-failed { border-left-color: var(--danger); }
+.meeting-item:hover { background: var(--hover); }
