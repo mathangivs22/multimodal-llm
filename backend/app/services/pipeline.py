@@ -208,10 +208,10 @@ def run_analysis(meeting_id: str) -> None:
 
         line_text = {s.seq: s.text.lower() for s in transcript_lines}
         valid_seqs = set(line_text)
+        overview = minutes.get("meeting_overview") if isinstance(minutes.get("meeting_overview"), dict) else {}
         spoken_text = " ".join(s.text for s in transcript_lines).lower()
         if isinstance(overview, dict):
             overview["participants"] = _clean_names(overview.get("participants"), spoken_text)
-        overview = minutes.get("meeting_overview") if isinstance(minutes.get("meeting_overview"), dict) else {}
         discussion = [str(x) for x in _as_list(minutes.get("discussion_summary"))]
 
         db.add(MeetingMinutes(
