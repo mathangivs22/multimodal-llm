@@ -45,3 +45,15 @@ export async function uploadMeetingFiles(meetingId, files, onProgress) {
   });
   return data;
 }
+
+/** Start analysis for a meeting. The backend runs it in the background. */
+export async function startAnalysis(meetingId) {
+  const { data } = await api.post(`/meetings/${meetingId}/analyze`);
+  return data;
+}
+
+/** Everything the analysis produced, plus the current job status and stage. */
+export async function getResults(meetingId) {
+  const { data } = await api.get(`/meetings/${meetingId}/results`);
+  return data;
+}

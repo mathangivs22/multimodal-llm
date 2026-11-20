@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import AnalysisPanel from "../components/AnalysisPanel.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import { errorMessage, getMeeting } from "../services/api.js";
 import { formatBytes, formatDate } from "../utils/files.js";
@@ -87,12 +88,11 @@ export default function MeetingDetailPage() {
         )}
       </section>
 
-      <section className="panel panel-quiet">
-        <h2>Analysis</h2>
-        <p className="muted">
-          Transcription, slide reading and decision tracking arrive in the next phase. Results will appear here.
-        </p>
-      </section>
+      <AnalysisPanel
+        meetingId={meetingId}
+        initialStatus={meeting.status}
+        onStatusChange={(status) => setMeeting((m) => (m ? { ...m, status } : m))}
+      />
     </div>
   );
 }
